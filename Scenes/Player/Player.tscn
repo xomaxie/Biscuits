@@ -1,0 +1,92 @@
+[gd_scene load_steps=15 format=3 uid="uid://dt4qc2a7mub8s"]
+
+[ext_resource type="Script" uid="uid://c2eapae3kjvr3" path="res://Scenes/Player/player.gd" id="1_h54ih"]
+[ext_resource type="Texture2D" uid="uid://c0rb6tg04i0nq" path="res://Scenes/Player/Hana Caraka - Base Character [sample]/run.png" id="2_ude3g"]
+[ext_resource type="Script" uid="uid://daudns05gkr3x" path="res://Scenes/Player/WeaponManager.gd" id="3_jmcll"]
+[ext_resource type="PackedScene" uid="uid://brcrpjlw677fw" path="res://Scenes/WeaponManager/RangedWeapon.tscn" id="4_ude3g"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4wape"]
+atlas = ExtResource("2_ude3g")
+region = Rect2(0, 160, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_t26db"]
+atlas = ExtResource("2_ude3g")
+region = Rect2(80, 160, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fk5o5"]
+atlas = ExtResource("2_ude3g")
+region = Rect2(160, 160, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_825xp"]
+atlas = ExtResource("2_ude3g")
+region = Rect2(240, 160, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ji083"]
+atlas = ExtResource("2_ude3g")
+region = Rect2(320, 160, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0kmp4"]
+atlas = ExtResource("2_ude3g")
+region = Rect2(400, 160, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_i5acl"]
+atlas = ExtResource("2_ude3g")
+region = Rect2(480, 160, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_epg6k"]
+atlas = ExtResource("2_ude3g")
+region = Rect2(560, 160, 80, 80)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_0u84n"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4wape")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_t26db")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fk5o5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_825xp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ji083")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0kmp4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_i5acl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_epg6k")
+}],
+"loop": true,
+"name": &"RunForward",
+"speed": 12.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_esmjy"]
+radius = 8.06226
+
+[node name="Player" type="CharacterBody2D"]
+script = ExtResource("1_h54ih")
+
+[node name="Sprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(4, 4)
+sprite_frames = SubResource("SpriteFrames_0u84n")
+animation = &"RunForward"
+frame_progress = 0.792737
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 21)
+shape = SubResource("CircleShape2D_esmjy")
+
+[node name="WeaponManager" type="Node2D" parent="."]
+position = Vector2(0, 5)
+script = ExtResource("3_jmcll")
+starting_ranged_weapon = ExtResource("4_ude3g")
+starting_ranged_count = 2

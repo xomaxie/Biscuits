@@ -1,7 +1,7 @@
 extends Control
 
 # Adjust these paths to match your project’s scene files
-const START_SCENE := "res://scenes/dungeon.tscn"
+const START_SCENE := "res://intro.tscn"
 const TEST_SCENE  := "res://scenes/Test.tscn"
 
 func _on_start_btn_button_down() -> void:

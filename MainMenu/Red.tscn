@@ -3,7 +3,7 @@
 [ext_resource type="FontFile" uid="uid://vo8pyg6fnfud" path="res://fonts/superstarorig_memesbruh03.ttf" id="1_0figk"]
 [ext_resource type="Script" uid="uid://bn85eycv4qims" path="res://MainMenu/MainMenu.gd" id="1_hlbaj"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hlbaj"]
 resource_name = "red_button_hover"
 bg_color = Color(0.9, 0.3, 0.3, 1)
 border_width_left = 2
@@ -16,7 +16,7 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_imden"]
 resource_name = "red_button_normal"
 bg_color = Color(0.7, 0.15, 0.15, 1)
 border_width_left = 2
@@ -29,7 +29,7 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a5ktp"]
 resource_name = "red_button_pressed"
 bg_color = Color(0.6, 0.1, 0.1, 1)
 border_width_left = 2
@@ -43,10 +43,10 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="Theme" id="Theme_1"]
-Button/styles/focus = SubResource("StyleBoxFlat_2")
-Button/styles/hover = SubResource("StyleBoxFlat_2")
-Button/styles/normal = SubResource("StyleBoxFlat_1")
-Button/styles/pressed = SubResource("StyleBoxFlat_3")
+Button/styles/focus = SubResource("StyleBoxFlat_hlbaj")
+Button/styles/hover = SubResource("StyleBoxFlat_hlbaj")
+Button/styles/normal = SubResource("StyleBoxFlat_imden")
+Button/styles/pressed = SubResource("StyleBoxFlat_a5ktp")
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3

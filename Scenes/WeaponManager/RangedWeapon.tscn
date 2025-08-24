@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://brcrpjlw677fw"]
+
+[ext_resource type="Script" uid="uid://c7brh04of8wj6" path="res://Scenes/Player/RangedWeapon.gd" id="1_rf25i"]
+
+[node name="RangedWeapon" type="Node2D"]
+script = ExtResource("1_rf25i")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]

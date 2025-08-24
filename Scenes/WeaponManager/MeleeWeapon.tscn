@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://b570hrfdhs238"]
+
+[ext_resource type="Script" uid="uid://chx83twv0vw1l" path="res://Scenes/Player/MeleeWeapon.gd" id="1_1o5kv"]
+
+[node name="MeleeWeapon" type="Node2D"]
+script = ExtResource("1_1o5kv")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]

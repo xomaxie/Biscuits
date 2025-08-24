@@ -1,0 +1,89 @@
+[gd_scene load_steps=3 format=3 uid="uid://jml2fmivv0xv"]
+
+[ext_resource type="Script" uid="uid://b3vqpnw0cbeip" path="res://intro.gd" id="1_ayt76"]
+[ext_resource type="Theme" uid="uid://cgyexe6foeoie" path="res://Theme.tres" id="2_7a8ye"]
+
+[node name="Intro" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_ayt76")
+
+[node name="Fade" type="ColorRect" parent="."]
+z_index = 10
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
+[node name="Bg" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0588235, 0.0901961, 0.12549, 1)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Center"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="Title" type="Label" parent="Center/VBox"]
+layout_mode = 2
+size_flags_vertical = 1
+theme = ExtResource("2_7a8ye")
+text = "DEFEND THE BISCUIT STORES"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Objective" type="Label" parent="Center/VBox"]
+layout_mode = 2
+theme = ExtResource("2_7a8ye")
+theme_override_font_sizes/font_size = 16
+text = "Leave the nexus and farm biscuits… but risk losing it all."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="Center/VBox"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_stretch_ratio = 0.0
+
+[node name="Tips" type="RichTextLabel" parent="Center/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme = ExtResource("2_7a8ye")
+theme_override_font_sizes/normal_font_size = 15
+bbcode_enabled = true
+text = "[center][b]Quick Tips[/b]
+• Protect the Nexus.
+• Biscuits buy upgrades between waves.
+• Farther from center = more biscuits, more danger.[/center]
+"
+fit_content = true
+scroll_active = false
+
+[node name="AnyKey" type="Label" parent="Center/VBox"]
+modulate = Color(1, 1, 1, 0.65)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Press Any Key to Continue"
+horizontal_alignment = 1
+vertical_alignment = 1
