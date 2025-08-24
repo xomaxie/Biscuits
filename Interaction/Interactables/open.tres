@@ -1,0 +1,23 @@
+[gd_resource type="SpriteFrames" load_steps=3 format=3 uid="uid://didm4uen2eogn"]
+
+[ext_resource type="Texture2D" uid="uid://c4f35l6kig8b6" path="res://tileset/Kenney/dungeon/Isometric/stoneWallDoorClosed_S.png" id="1_c2574"]
+[ext_resource type="Texture2D" uid="uid://b3dt2wk45y0wr" path="res://tileset/Kenney/dungeon/Isometric/stoneWallDoorOpen_S.png" id="2_uln7d"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_c2574")
+}],
+"loop": true,
+"name": &"Close",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_uln7d")
+}],
+"loop": true,
+"name": &"Open",
+"speed": 5.0
+}]

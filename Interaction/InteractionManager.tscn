@@ -1,0 +1,25 @@
+[gd_scene load_steps=2 format=3 uid="uid://q531kg6y13cb"]
+
+[ext_resource type="Script" uid="uid://ddfpt71s24lrc" path="res://Interaction/interaction_manager.gd" id="1_j22pa"]
+
+[node name="InteractionManager" type="Node2D"]
+position = Vector2(0, -152)
+script = ExtResource("1_j22pa")
+
+[node name="Label" type="Label" parent="."]
+z_index = 20
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -96.0
+offset_top = -210.0
+offset_right = 108.0
+offset_bottom = -178.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.977503, 0.617904, 0.738585, 1)
+theme_override_colors/font_shadow_color = Color(0.097408, 0.235638, 0.340838, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 32
+text = "[E] TO INTERACT"
+horizontal_alignment = 1
+vertical_alignment = 1

@@ -1,0 +1,58 @@
+[gd_scene load_steps=5 format=3 uid="uid://b27jqm15ctdji"]
+
+[ext_resource type="Script" uid="uid://blet3yyrdcd1y" path="res://Interaction/Interactables/Open.gd" id="1_3mq3t"]
+[ext_resource type="SpriteFrames" uid="uid://didm4uen2eogn" path="res://Interaction/Interactables/open.tres" id="2_4i0x7"]
+[ext_resource type="Script" uid="uid://dcp40r4w2iqoy" path="res://Interaction/Interaction Area/interaction_area.gd" id="4_jnik4"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_af0dt"]
+radius = 247.687
+
+[node name="Open" type="Node2D"]
+y_sort_enabled = true
+script = ExtResource("1_3mq3t")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+y_sort_enabled = true
+position = Vector2(1, 0)
+sprite_frames = ExtResource("2_4i0x7")
+animation = &"Close"
+offset = Vector2(-127.22, -179.825)
+
+[node name="InteractionArea" type="Area2D" parent="."]
+position = Vector2(1, -156)
+collision_layer = 0
+script = ExtResource("4_jnik4")
+action_name = "Open"
+metadata/_custom_type_script = "uid://dcp40r4w2iqoy"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea"]
+position = Vector2(-66, 132)
+rotation = -1.51196
+scale = Vector2(0.467077, 0.734577)
+shape = SubResource("CircleShape2D_af0dt")
+
+[node name="StaticBody2D" type="StaticBody2D" parent="."]
+y_sort_enabled = true
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionPolygon2D2" type="CollisionPolygon2D" parent="StaticBody2D"]
+y_sort_enabled = true
+position = Vector2(-157, -93)
+scale = Vector2(7.96591, 10.4809)
+polygon = PackedVector2Array(5.77461, 7.63293, 9.28959, 6.48799, 3.64051, 4.38894, -0.376605, 5.43846)
+
+[node name="w" type="CollisionPolygon2D" parent="StaticBody2D"]
+y_sort_enabled = true
+position = Vector2(-82, -55)
+scale = Vector2(7.96591, 10.4809)
+polygon = PackedVector2Array(6.52782, 7.82376, 10.2939, 6.20176, 5.0214, 4.38894, 0.878745, 5.62929)
+
+[node name="doorcollision" type="CollisionPolygon2D" parent="StaticBody2D"]
+y_sort_enabled = true
+position = Vector2(-124, -70)
+scale = Vector2(7.96591, 10.4809)
+polygon = PackedVector2Array(6.65335, 7.06046, 9.03852, 6.39258, 4.26819, 4.57975, 1.75749, 5.24764)
+
+[connection signal="body_entered" from="InteractionArea" to="InteractionArea" method="_on_body_entered"]
+[connection signal="body_exited" from="InteractionArea" to="InteractionArea" method="_on_body_exited"]

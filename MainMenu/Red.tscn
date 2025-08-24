@@ -1,0 +1,164 @@
+[gd_scene load_steps=7 format=3 uid="uid://c207eh03jhkby"]
+
+[ext_resource type="FontFile" uid="uid://vo8pyg6fnfud" path="res://fonts/superstarorig_memesbruh03.ttf" id="1_0figk"]
+[ext_resource type="Script" uid="uid://bn85eycv4qims" path="res://MainMenu/MainMenu.gd" id="1_hlbaj"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2"]
+resource_name = "red_button_hover"
+bg_color = Color(0.9, 0.3, 0.3, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.5, 0.5, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
+resource_name = "red_button_normal"
+bg_color = Color(0.7, 0.15, 0.15, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.3, 0.3, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3"]
+resource_name = "red_button_pressed"
+bg_color = Color(0.6, 0.1, 0.1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.8, 0.2, 0.2, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="Theme" id="Theme_1"]
+Button/styles/focus = SubResource("StyleBoxFlat_2")
+Button/styles/hover = SubResource("StyleBoxFlat_2")
+Button/styles/normal = SubResource("StyleBoxFlat_1")
+Button/styles/pressed = SubResource("StyleBoxFlat_3")
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_hlbaj")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.08, 0.02, 0.02, 1)
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="MainContainer" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Game Title" type="Label" parent="UI/MainContainer"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -219.0
+offset_top = 102.565
+offset_right = 219.0
+offset_bottom = 152.565
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.6, 0.6, 1)
+theme_override_fonts/font = ExtResource("1_0figk")
+theme_override_font_sizes/font_size = 48
+text = "Biscuits"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MenuButtons" type="VBoxContainer" parent="UI/MainContainer"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -120.0
+offset_right = 100.0
+offset_bottom = 120.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_1")
+
+[node name="StartBtn" type="Button" parent="UI/MainContainer/MenuButtons"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 18
+text = "START"
+
+[node name="SettingsBtn2" type="Button" parent="UI/MainContainer/MenuButtons"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 18
+text = "SETTINGS
+"
+
+[node name="TestLevelBtn" type="Button" parent="UI/MainContainer/MenuButtons"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 18
+text = "TEST LEVEL"
+
+[node name="Sep" type="VSeparator" parent="UI/MainContainer/MenuButtons"]
+layout_mode = 2
+
+[node name="CreditsBtn" type="Button" parent="UI/MainContainer/MenuButtons"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 18
+text = "CREDITS"
+
+[node name="QuitBtn" type="Button" parent="UI/MainContainer/MenuButtons"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 18
+text = "QUIT"
+
+[node name="VersionLabel" type="Label" parent="UI/MainContainer"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -111.0
+offset_top = -23.0
+offset_right = -6.0
+offset_bottom = -3.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.3, 0.3, 0.8)
+theme_override_font_sizes/font_size = 10
+text = "v0.01 by Max & BeanieBaby"
+horizontal_alignment = 2
+
+[connection signal="button_down" from="UI/MainContainer/MenuButtons/StartBtn" to="." method="_on_start_btn_button_down"]
+[connection signal="button_down" from="UI/MainContainer/MenuButtons/SettingsBtn2" to="." method="_on_settings_btn_2_button_down"]
+[connection signal="button_down" from="UI/MainContainer/MenuButtons/TestLevelBtn" to="." method="_on_test_level_btn_button_down"]
+[connection signal="button_down" from="UI/MainContainer/MenuButtons/CreditsBtn" to="." method="_on_credits_btn_button_down"]
+[connection signal="button_down" from="UI/MainContainer/MenuButtons/QuitBtn" to="." method="_on_quit_btn_button_down"]
