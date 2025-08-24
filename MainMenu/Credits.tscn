@@ -1,7 +1,7 @@
-[gd_scene load_steps=7 format=3 uid="uid://c207eh03jhkby"]
+[gd_scene load_steps=7 format=3 uid="uid://cuevpdscc6iv"]
 
-[ext_resource type="FontFile" uid="uid://vo8pyg6fnfud" path="res://fonts/superstarorig_memesbruh03.ttf" id="1_0figk"]
-[ext_resource type="Script" uid="uid://bn85eycv4qims" path="res://MainMenu/MainMenu.gd" id="1_hlbaj"]
+[ext_resource type="Script" uid="uid://qii7i7mrek5r" path="res://Credits.gd" id="1_n222b"]
+[ext_resource type="FontFile" uid="uid://vo8pyg6fnfud" path="res://fonts/superstarorig_memesbruh03.ttf" id="2_o7h06"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2"]
 resource_name = "red_button_hover"
@@ -48,14 +48,14 @@ Button/styles/hover = SubResource("StyleBoxFlat_2")
 Button/styles/normal = SubResource("StyleBoxFlat_1")
 Button/styles/pressed = SubResource("StyleBoxFlat_3")
 
-[node name="MainMenu" type="Control"]
+[node name="Credits" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_hlbaj")
+script = ExtResource("1_n222b")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 0
@@ -73,23 +73,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Game Title" type="Label" parent="UI/MainContainer"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -219.0
-offset_top = 102.565
-offset_right = 219.0
-offset_bottom = 152.565
-grow_horizontal = 2
-theme_override_colors/font_color = Color(1, 0.6, 0.6, 1)
-theme_override_fonts/font = ExtResource("1_0figk")
-theme_override_font_sizes/font_size = 48
-text = "Biscuits"
-horizontal_alignment = 1
-vertical_alignment = 1
-
 [node name="MenuButtons" type="VBoxContainer" parent="UI/MainContainer"]
 layout_mode = 1
 anchors_preset = 8
@@ -98,46 +81,49 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -100.0
-offset_top = -120.0
+offset_top = -262.0
 offset_right = 100.0
-offset_bottom = 120.0
+offset_bottom = 321.0
 grow_horizontal = 2
 grow_vertical = 2
 theme = SubResource("Theme_1")
 
-[node name="StartBtn" type="Button" parent="UI/MainContainer/MenuButtons"]
+[node name="Game Title" type="Label" parent="UI/MainContainer/MenuButtons"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.9, 1)
-theme_override_font_sizes/font_size = 18
-text = "START"
+theme_override_colors/font_color = Color(1, 0.6, 0.6, 1)
+theme_override_fonts/font = ExtResource("2_o7h06")
+theme_override_font_sizes/font_size = 48
+text = "Credits"
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="SettingsBtn2" type="Button" parent="UI/MainContainer/MenuButtons"]
+[node name="RichTextLabel" type="RichTextLabel" parent="UI/MainContainer/MenuButtons"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.9, 1)
-theme_override_font_sizes/font_size = 18
-text = "SETTINGS
+theme_override_fonts/normal_font = ExtResource("2_o7h06")
+theme_override_font_sizes/normal_font_size = 25
+text = "Max Anthony
+-----------------
+https://github.com/xomaxie
+https://xomaxie.itch.io/
+
+
+David Hawley
+-----------------
+https://github.com/
+https://davidhawley.itch.io/
 "
+fit_content = true
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="TestLevelBtn" type="Button" parent="UI/MainContainer/MenuButtons"]
+[node name="BackBtn" type="Button" parent="UI/MainContainer/MenuButtons"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.9, 1)
 theme_override_font_sizes/font_size = 18
-text = "TEST LEVEL"
+text = "Back"
 
 [node name="Sep" type="VSeparator" parent="UI/MainContainer/MenuButtons"]
 layout_mode = 2
-
-[node name="CreditsBtn" type="Button" parent="UI/MainContainer/MenuButtons"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.9, 1)
-theme_override_font_sizes/font_size = 18
-text = "CREDITS"
-
-[node name="QuitBtn" type="Button" parent="UI/MainContainer/MenuButtons"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.9, 1)
-theme_override_font_sizes/font_size = 18
-text = "QUIT"
 
 [node name="VersionLabel" type="Label" parent="UI/MainContainer"]
 layout_mode = 1
@@ -157,8 +143,4 @@ theme_override_font_sizes/font_size = 10
 text = "v0.01 by Max & David"
 horizontal_alignment = 2
 
-[connection signal="button_down" from="UI/MainContainer/MenuButtons/StartBtn" to="." method="_on_start_btn_button_down"]
-[connection signal="button_down" from="UI/MainContainer/MenuButtons/SettingsBtn2" to="." method="_on_settings_btn_2_button_down"]
-[connection signal="button_down" from="UI/MainContainer/MenuButtons/TestLevelBtn" to="." method="_on_test_level_btn_button_down"]
-[connection signal="button_down" from="UI/MainContainer/MenuButtons/CreditsBtn" to="." method="_on_credits_btn_button_down"]
-[connection signal="button_down" from="UI/MainContainer/MenuButtons/QuitBtn" to="." method="_on_quit_btn_button_down"]
+[connection signal="button_down" from="UI/MainContainer/MenuButtons/BackBtn" to="." method="_on_back_btn_button_down"]

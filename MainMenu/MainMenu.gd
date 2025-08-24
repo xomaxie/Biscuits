@@ -20,7 +20,7 @@ func _on_settings_btn_2_button_down() -> void:
 func _on_credits_btn_button_down() -> void:
 	print("DEBUG: Credits button pressed")
 	# TODO: open credits scene
-	# get_tree().change_scene_to_file("res://scenes/credits.tscn")
+	get_tree().change_scene_to_file("res://MainMenu/Credits.tscn")
 
 func _on_quit_btn_button_down() -> void:
 	print("DEBUG: Quit button pressed")
