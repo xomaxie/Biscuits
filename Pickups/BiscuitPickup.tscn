@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3 uid="uid://65uylbwhdw1a"]
+
+[ext_resource type="Script" uid="uid://crbgiivs7na82" path="res://Pickups/BarrelPickup.gd" id="1_2t30l"]
+[ext_resource type="Texture2D" uid="uid://428gxqd0k7ue" path="res://Tilesets/BiscuitBuscuit.png" id="2_kw5hl"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_yeyns"]
+radius = 37.1214
+
+[node name="BarrelPickup" type="Area2D"]
+collision_layer = 0
+collision_mask = 3
+script = ExtResource("1_2t30l")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_yeyns")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("2_kw5hl")

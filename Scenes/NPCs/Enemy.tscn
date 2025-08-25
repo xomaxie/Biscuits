@@ -1,0 +1,89 @@
+[gd_scene load_steps=13 format=3 uid="uid://dfhos6dc1q2om"]
+
+[ext_resource type="Script" uid="uid://xg40ccusorf0" path="res://Scenes/NPCs/enemy.gd" id="1_xfrnf"]
+[ext_resource type="Texture2D" uid="uid://dlsaroml2u127" path="res://Tilesets/NPCs/Bat with VFX/Bat-Run.png" id="2_52wyw"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_gwnmk"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6py02"]
+atlas = ExtResource("2_52wyw")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7ynxy"]
+atlas = ExtResource("2_52wyw")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_c8poj"]
+atlas = ExtResource("2_52wyw")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_h776d"]
+atlas = ExtResource("2_52wyw")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fqh7f"]
+atlas = ExtResource("2_52wyw")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_iifgs"]
+atlas = ExtResource("2_52wyw")
+region = Rect2(320, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8jce2"]
+atlas = ExtResource("2_52wyw")
+region = Rect2(384, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tcv06"]
+atlas = ExtResource("2_52wyw")
+region = Rect2(448, 0, 64, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_vodss"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6py02")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7ynxy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_c8poj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_h776d")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fqh7f")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_iifgs")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8jce2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tcv06")
+}],
+"loop": true,
+"name": &"Run",
+"speed": 11.0
+}]
+
+[node name="Enemy" type="CharacterBody2D"]
+script = ExtResource("1_xfrnf")
+speed = 120.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_gwnmk")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(4, 4)
+sprite_frames = SubResource("SpriteFrames_vodss")
+animation = &"Run"
+autoplay = "Run"
+frame_progress = 0.0797361
+
+[node name="Area2D" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource("CircleShape2D_gwnmk")

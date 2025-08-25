@@ -15,6 +15,10 @@ run/main_scene="uid://c207eh03jhkby"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[autoload]
+
+GameState="*res://autoload/GameState.gd"
+
 [editor]
 
 version_control/plugin_name="GitPlugin"
@@ -45,5 +49,6 @@ move_right={
 
 [rendering]
 
+textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"

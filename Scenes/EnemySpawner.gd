@@ -1,14 +1,17 @@
 extends Node2D
 
 @export var enemy_scene: PackedScene
-@export var spawn_margin: float = 48.0          # how far off-screen edges to spawn
+@export var spawn_margin: float = 48.0  
 @export var spawn_interval: float = 0.9
 @export var max_enemies: int = 120
 
-var _enabled := false
-var _timer := 0.0
-var _nexus: Node2D
-var _container: Node
+var _enabled: bool = false
+var _timer: float = 0.0
+var _nexus: Node2D = null
+var _container: Node = null
+
+func _ready() -> void:
+	randomize()
 
 func configure(nexus: Node2D, container: Node) -> void:
 	_nexus = nexus
@@ -22,7 +25,9 @@ func set_spawn_interval(seconds: float) -> void:
 	spawn_interval = max(0.05, seconds)
 
 func _physics_process(delta: float) -> void:
-	if not _enabled or enemy_scene == null or _nexus == null or _container == null:
+	if not _enabled:
+		return
+	if enemy_scene == null or _nexus == null or _container == null:
 		return
 	if _container.get_child_count() >= max_enemies:
 		return
@@ -33,23 +38,56 @@ func _physics_process(delta: float) -> void:
 		_spawn_one()
 
 func _spawn_one() -> void:
-	# Spawn at a random point just off the screen edges.
-	var vp := get_viewport()
-	if vp == null: return
-	var rect := vp.get_visible_rect()
-	var side := randi() % 4  # 0 top, 1 right, 2 bottom, 3 left
+	var rect: Rect2 = _get_world_visible_rect()
+	if rect.size == Vector2.ZERO:
+		return
 
-	var pos := Vector2.ZERO
+	var side: int = randi() % 4  # 0 top, 1 right, 2 bottom, 3 left
+	var pos: Vector2 = Vector2.ZERO
 	match side:
-		0: pos = Vector2(randf_range(rect.position.x, rect.end.x), rect.position.y - spawn_margin)
-		1: pos = Vector2(rect.end.x + spawn_margin, randf_range(rect.position.y, rect.end.y))
-		2: pos = Vector2(randf_range(rect.position.x, rect.end.x), rect.end.y + spawn_margin)
-		3: pos = Vector2(rect.position.x - spawn_margin, randf_range(rect.position.y, rect.end.y))
+		0:
+			pos = Vector2(randf_range(rect.position.x, rect.position.x + rect.size.x), rect.position.y - spawn_margin)
+		1:
+			pos = Vector2(rect.position.x + rect.size.x + spawn_margin, randf_range(rect.position.y, rect.position.y + rect.size.y))
+		2:
+			pos = Vector2(randf_range(rect.position.x, rect.position.x + rect.size.x), rect.position.y + rect.size.y + spawn_margin)
+		3:
+			pos = Vector2(rect.position.x - spawn_margin, randf_range(rect.position.y, rect.position.y + rect.size.y))
 
-	var e := enemy_scene.instantiate()
+	var e: Node = enemy_scene.instantiate()
+	if e == null:
+		return
+
+	if _nexus != null:
+		var nexus_path: NodePath = _nexus.get_path()
+		if _has_property(e, "target_path"):
+			e.set("target_path", nexus_path)
+
 	_container.add_child(e)
+
 	if e is Node2D:
-		e.global_position = pos
-	# Optional: tell the enemy where to go if it wants a direct reference
-	if e.has_method("set_target"):
+		(e as Node2D).global_position = pos
+
+	# Also call method after add_child to cache direct reference
+	if _nexus != null and e.has_method("set_target"):
 		e.set_target(_nexus)
+
+# --- Helpers -----------------------------------------------------------------
+
+func _get_world_visible_rect() -> Rect2:
+	var cam: Camera2D = get_viewport().get_camera_2d()
+	if cam != null:
+		var center: Vector2 = cam.get_screen_center_position()     # world coords
+		var vp_size: Vector2 = get_viewport_rect().size            # pixels
+		var half: Vector2 = vp_size * 0.5 * cam.zoom               # world half-size (zoom-aware)
+		var top_left: Vector2 = center - half
+		return Rect2(top_left, vp_size * cam.zoom)
+	# Fallback: viewport rect in local coords (not camera-aware)
+	return Rect2(get_viewport().get_visible_rect())
+
+func _has_property(obj: Object, prop: String) -> bool:
+	var plist: Array = obj.get_property_list()
+	for p in plist:
+		if p is Dictionary and p.has("name") and String(p["name"]) == prop:
+			return true
+	return false

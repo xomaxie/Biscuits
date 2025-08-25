@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://c4mn6wxav531b"]
+
+[ext_resource type="Script" uid="uid://padsc0omibg5" path="res://Pickups/BarrelSpawner.gd" id="1_0d73t"]
+
+[node name="BarrelSpawner" type="Node2D"]
+script = ExtResource("1_0d73t")

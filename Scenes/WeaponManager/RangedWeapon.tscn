@@ -1,8 +1,20 @@
-[gd_scene load_steps=2 format=3 uid="uid://brcrpjlw677fw"]
+[gd_scene load_steps=4 format=3 uid="uid://brcrpjlw677fw"]
 
 [ext_resource type="Script" uid="uid://c7brh04of8wj6" path="res://Scenes/Player/RangedWeapon.gd" id="1_rf25i"]
+[ext_resource type="Texture2D" uid="uid://osj5gfyvskrk" path="res://Tilesets/Guns/Shotguns/2Shotgun02.png" id="2_5663t"]
+[ext_resource type="PackedScene" uid="uid://dmwn5lnxniusd" path="res://Scenes/WeaponManager/Bullet.tscn" id="2_r76lk"]
 
 [node name="RangedWeapon" type="Node2D"]
+position = Vector2(0, -0.06)
 script = ExtResource("1_rf25i")
+damage = 3
+bullet_scene = ExtResource("2_r76lk")
+sprite_forward_offset = 50.0
+projectiles = 6
+spread_total_deg = 15.0
+muzzle_forward = 5.0
+bullet_scale = Vector2(0.05, 0.05)
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_5663t")
+centered = false

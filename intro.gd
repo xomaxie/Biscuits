@@ -1,6 +1,6 @@
 extends Control
 
-@export_file("*.tscn") var next_scene: String = "res://scenes/Game.tscn"
+@export_file("*.tscn") var next_scene: String = "res://Scenes/Game.tscn"
 @export var auto_continue_after: float = 0.0 
 
 var _can_start := false

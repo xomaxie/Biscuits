@@ -1,12 +1,16 @@
-[gd_scene load_steps=3 format=3 uid="uid://dmwn5lnxniusd"]
+[gd_scene load_steps=4 format=3 uid="uid://dmwn5lnxniusd"]
 
 [ext_resource type="Script" uid="uid://cjvs8hq7lenon" path="res://Scenes/WeaponManager/bullet.gd" id="1_ob4du"]
+[ext_resource type="Texture2D" uid="uid://cjf0rljqx3rm5" path="res://Tilesets/Guns/Shotguns/BiscuitBall.png" id="2_xtnit"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_xtnit"]
-radius = 2.23607
+radius = 11.0
 
 [node name="Bullet" type="Area2D"]
 script = ExtResource("1_ob4du")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_xtnit")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_xtnit")
