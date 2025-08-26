@@ -1,5 +1,8 @@
 extends CharacterBody2D
 
+# -----------------------------------------------------------------------------
+# Exports
+# -----------------------------------------------------------------------------
 @export var speed: float = 80.0
 @export var hp: int = 6
 @export var touch_damage: int = 5
@@ -8,8 +11,11 @@ extends CharacterBody2D
 @export var target_path: NodePath = NodePath("")
 @export var debug_attack_logs: bool = true
 @export var debug_draw: bool = false
-@export var hit_flash_time: float = 0.06   # quick flash for multi-hit readability
+@export var hit_flash_time: float = 0.06
 
+# -----------------------------------------------------------------------------
+# Node refs & runtime state
+# -----------------------------------------------------------------------------
 @onready var _visual: CanvasItem = _find_visual()
 @onready var contact: Area2D = get_node_or_null("Contact") as Area2D
 
@@ -18,16 +24,21 @@ var _touching_nexus: bool = false
 var _nexus: Node2D = null
 var _contact_accum: float = 0.0
 
-# Accumulate damage within a single physics tick
 var _pending_damage: int = 0
 var _took_damage_this_frame: bool = false
-var _flashing: bool = false  # prevents overlapping flash coroutines fighting
+var _flashing: bool = false
 
+# -----------------------------------------------------------------------------
+# Target
+# -----------------------------------------------------------------------------
 func set_target(t: Node2D) -> void:
 	_target = t
 	if is_instance_valid(t):
 		target_path = t.get_path()
 
+# -----------------------------------------------------------------------------
+# Lifecycle
+# -----------------------------------------------------------------------------
 func _ready() -> void:
 	add_to_group("enemies")
 
@@ -39,18 +50,19 @@ func _ready() -> void:
 		if arr.size() > 0:
 			_target = arr[0] as Node2D
 
-	# Wire contact zone if present
 	if contact != null:
 		if not contact.body_entered.is_connected(_on_contact_body_entered):
 			contact.body_entered.connect(_on_contact_body_entered)
 		if not contact.body_exited.is_connected(_on_contact_body_exited):
 			contact.body_exited.connect(_on_contact_body_exited)
 
+# -----------------------------------------------------------------------------
+# Physics
+# -----------------------------------------------------------------------------
 func _physics_process(_delta: float) -> void:
 	if debug_draw:
 		queue_redraw()
 
-	# Movement
 	if _target != null:
 		var to_target: Vector2 = _target.global_position - global_position
 		var dist: float = to_target.length()
@@ -62,7 +74,6 @@ func _physics_process(_delta: float) -> void:
 		velocity = dir * speed
 		move_and_slide()
 
-	# Apply any bullet damage that arrived this physics tick
 	if _pending_damage > 0:
 		hp -= _pending_damage
 		_pending_damage = 0
@@ -73,7 +84,6 @@ func _physics_process(_delta: float) -> void:
 			queue_free()
 			return
 
-	# Periodic contact damage if overlapping nexus
 	if _touching_nexus and is_instance_valid(_nexus):
 		_contact_accum += _delta
 		if _contact_accum >= contact_interval:
@@ -83,18 +93,21 @@ func _physics_process(_delta: float) -> void:
 				if debug_attack_logs:
 					print("[Enemy#", str(get_instance_id()), "] attack tick -> Nexus for ", str(touch_damage))
 
-	# Reset the frame flag at end of physics
 	_took_damage_this_frame = false
 
+# -----------------------------------------------------------------------------
+# Damage
+# -----------------------------------------------------------------------------
 func take_hit(dmg: int) -> void:
 	if dmg < 0:
 		dmg = 0
 	_pending_damage += dmg
 	print("HIT ", Engine.get_physics_frames())
 
-# ----- Flash visuals -----
+# -----------------------------------------------------------------------------
+# Flash visuals
+# -----------------------------------------------------------------------------
 func _find_visual() -> CanvasItem:
-	# Breadth-first: prefer AnimatedSprite2D, then Sprite2D
 	var q: Array[Node] = [self]
 	while q.size() > 0:
 		var n: Node = q.pop_front()
@@ -104,7 +117,6 @@ func _find_visual() -> CanvasItem:
 			return n as CanvasItem
 		for c in n.get_children():
 			q.push_back(c as Node)
-	# Fallback: any child CanvasItem (not self)
 	var q2: Array[Node] = [self]
 	while q2.size() > 0:
 		var n2: Node = q2.pop_front()
@@ -112,7 +124,6 @@ func _find_visual() -> CanvasItem:
 			return n2 as CanvasItem
 		for c2 in n2.get_children():
 			q2.push_back(c2 as Node)
-	# Final fallback: self (Node2D is a CanvasItem, but draws nothing by itself)
 	return self
 
 func _flash_hit() -> void:
@@ -136,7 +147,9 @@ func _flash_hit() -> void:
 	_visual.self_modulate = Color(1, 1, 1)
 	_flashing = false
 
-# ----- Nexus contact -----
+# -----------------------------------------------------------------------------
+# Nexus contact
+# -----------------------------------------------------------------------------
 func _on_contact_body_entered(body: Node) -> void:
 	if body != null and body.is_in_group("nexus"):
 		_touching_nexus = true
@@ -153,6 +166,9 @@ func _on_contact_body_exited(body: Node) -> void:
 		if debug_attack_logs:
 			print("[Enemy#", str(get_instance_id()), "] end attack (left Nexus zone)")
 
+# -----------------------------------------------------------------------------
+# Debug draw
+# -----------------------------------------------------------------------------
 func _draw() -> void:
 	if not debug_draw or _target == null:
 		return

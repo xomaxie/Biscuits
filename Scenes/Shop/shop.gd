@@ -3,6 +3,9 @@ class_name ShopUI
 
 signal continue_pressed()
 
+# -----------------------------------------------------------------------------
+# Node references
+# -----------------------------------------------------------------------------
 var title      : Label
 var offers_row : HBoxContainer
 var reroll_btn : Button
@@ -12,51 +15,58 @@ var biscuits_l : Label
 var offers_grid: GridContainer
 var offers_wrap: MarginContainer
 
-# Pulled from UpgradeDB at runtime; falls back to a sane default if DB empty.
+# -----------------------------------------------------------------------------
+# Offers & shop state
+# -----------------------------------------------------------------------------
 var OFFER_KEYS: Array[String] = []
-const SLOTS := 3  # offer cards; a 4th "stats" card is auto-added
+const SLOTS := 3
 
 var _offers      : Array[String] = []
 var _slot_locked : Array[bool]   = [false, false, false]
 var _reroll_cost : int           = 2
 var _rng         : RandomNumberGenerator = RandomNumberGenerator.new()
 
-var _card_ui: Array = []  # per-card refs for refresh
+var _card_ui: Array = []
 
-# --- Stats card refs ---
+# -----------------------------------------------------------------------------
+# Stats card refs
+# -----------------------------------------------------------------------------
 var _stats_card  : PanelContainer
 var _stats_vbox  : VBoxContainer
 var _stats_label : RichTextLabel
 
-# --- Responsive thresholds & card sizing ---
+# -----------------------------------------------------------------------------
+# Layout constants
+# -----------------------------------------------------------------------------
 const CARD_MIN_W   := 180.0
 const CARD_MAX_W   := 320.0
 const CARD_MIN_H   := 360
 const CARD_MAX_H   := 360.0 * 2
 const GRID_GAP     := 64
-const EDGE_PADDING := 48.0  # screen edge padding in pixels
+const EDGE_PADDING := 48.0
 
+@onready var DB: Node = get_node("/root/UpgradeDB")
+
+# -----------------------------------------------------------------------------
+# Lifecycle
+# -----------------------------------------------------------------------------
 func _ready() -> void:
 	_rng.randomize()
 	_bind_refs()
 	_make_fullscreen_layout()
 	_ensure_offers_grid()
 
-	# Pull keys ASAP if DB is already ready; otherwise wait for it.
-	if typeof(UpgradeDB) != TYPE_NIL:
-		if UpgradeDB.is_ready():
-			OFFER_KEYS = UpgradeDB.keys_sorted()
-		else:
-			# Build once with fallbacks; refresh to real data when DB finishes.
-			UpgradeDB.db_ready.connect(_on_db_ready)
+	if DB and DB.is_ready():
+		OFFER_KEYS = DB.keys_sorted()
+	else:
+		if DB:
+			DB.db_ready.connect(_on_db_ready)
 	if OFFER_KEYS.is_empty():
 		OFFER_KEYS = ["damage","firerate","range","pickup","projectiles","movespeed"]
 
-	# Title
 	if title:
 		title.text = "Shop — Risk it for the Biscuit"
 
-	# Wire buttons
 	if reroll_btn:
 		reroll_btn.custom_minimum_size.y = 48
 		reroll_btn.pressed.connect(_on_reroll)
@@ -67,15 +77,13 @@ func _ready() -> void:
 	GameState.biscuits_changed.connect(_refresh_biscuits)
 	GameState.upgrades_changed.connect(_on_upgrades_changed)
 
-	# HTML5 timing: build next frame so autoloads/layout exist.
 	call_deferred("_first_build")
 
 	resized.connect(_on_resized)
 	_on_resized()
 
 func _on_db_ready() -> void:
-	# DB finished loading; switch to authoritative key order & re-render.
-	OFFER_KEYS = UpgradeDB.keys_sorted()
+	OFFER_KEYS = DB.keys_sorted()
 	_generate_if_needed()
 	_render_offers()
 	_refresh_biscuits()
@@ -85,7 +93,9 @@ func _first_build() -> void:
 	_render_offers()
 	_refresh_biscuits()
 
-# ---------- Node binding ----------
+# -----------------------------------------------------------------------------
+# Node binding
+# -----------------------------------------------------------------------------
 func _bind_refs() -> void:
 	title      = _find_node_as("Title", "Label")            as Label
 	offers_row = _find_node_as("Offers", "HBoxContainer")   as HBoxContainer
@@ -114,12 +124,13 @@ func _find_node_as(name:String, type_name:String) -> Node:
 			queue.push_back(c as Node)
 	return null
 
-# ---------- Build fullscreen + grid ----------
+# -----------------------------------------------------------------------------
+# Layout & grid building
+# -----------------------------------------------------------------------------
 func _make_fullscreen_layout() -> void:
 	anchors_preset = Control.PRESET_FULL_RECT
 	offset_left = 0; offset_top = 0; offset_right = 0; offset_bottom = 0
 
-	# Soft backdrop
 	if not get_node_or_null("Backdrop"):
 		var bg: ColorRect = ColorRect.new()
 		bg.name = "Backdrop"
@@ -128,7 +139,6 @@ func _make_fullscreen_layout() -> void:
 		add_child(bg)
 		bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 
-	# Title style
 	if title:
 		title.add_theme_font_size_override("font_size", 32)
 		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -171,7 +181,9 @@ func _ensure_offers_grid() -> void:
 		offers_grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		offers_wrap.add_child(offers_grid)
 
-# ---------- Responsive reflow ----------
+# -----------------------------------------------------------------------------
+# Responsive reflow
+# -----------------------------------------------------------------------------
 func _on_resized() -> void:
 	var vp_w: float = get_viewport_rect().size.x
 	var content_w: float = max(0.0, vp_w - (EDGE_PADDING * 2.0))
@@ -200,7 +212,9 @@ func _update_card_sizes(cols: int) -> void:
 		if card:
 			card.custom_minimum_size = Vector2(card_w, card_h)
 
-# ---------- UI / Flow ----------
+# -----------------------------------------------------------------------------
+# UI / Flow
+# -----------------------------------------------------------------------------
 func _refresh_biscuits(_t:int=0, _d:int=0) -> void:
 	if biscuits_l:
 		biscuits_l.add_theme_font_size_override("font_size", 20)
@@ -218,7 +232,8 @@ func _generate_if_needed() -> void:
 	_offers = _roll_offers(SLOTS)
 
 func _roll_offers(n:int) -> Array[String]:
-	# Build a shuffled pool from DB keys (or fallback OFFER_KEYS)
+	if DB and DB.is_ready() and DB.has_method("roll_offers"):
+		return DB.roll_offers(n, _rng)
 	var pool: Array[String] = []
 	for k in OFFER_KEYS:
 		pool.append(String(k))
@@ -232,7 +247,6 @@ func _render_offers() -> void:
 	if offers_grid == null:
 		return
 
-	# Clear grid
 	for n in offers_grid.get_children():
 		(n as Node).queue_free()
 
@@ -241,14 +255,12 @@ func _render_offers() -> void:
 	_stats_vbox = null
 	_stats_label = null
 
-	# --- Build offer cards ---
 	for i in range(SLOTS):
 		if i >= _offers.size():
 			break
 		var key: String = _offers[i]
-		# On web, don't skip if DB isn't ready; fallbacks render fine.
 
-		var lvl: int = GameState.get_upgrade(key, 0)
+		var lvl: int = GameState.get_item_count(key)  
 		var max_lvl: int = _get_max_level(key)
 
 		var card: PanelContainer = _make_card_container()
@@ -281,7 +293,6 @@ func _render_offers() -> void:
 		buttons.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		vb.add_child(buttons)
 
-		# Per-item LOCK (toggle)
 		var lock_button: Button = Button.new()
 		lock_button.toggle_mode = true
 		lock_button.button_pressed = _slot_locked[i]
@@ -291,14 +302,12 @@ func _render_offers() -> void:
 		lock_button.pressed.connect(_on_lock_toggled.bind(i, lock_button))
 		buttons.add_child(lock_button)
 
-		# BUY
 		var buy_btn: Button = Button.new()
 		buy_btn.custom_minimum_size = Vector2(0, 40)
 		buy_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		buy_btn.pressed.connect(_on_buy.bind(i))
 		buttons.add_child(buy_btn)
 
-		# Cache refs for later refresh
 		_card_ui.append({
 			"index": i,
 			"key": key,
@@ -307,15 +316,10 @@ func _render_offers() -> void:
 			"lock": lock_button
 		})
 
-	# --- Stats card (4th card) ---
 	_add_stats_card()
-
-	# First paint of texts/enabled state
 	_refresh_card_buttons()
 	_refresh_reroll_button()
 	_refresh_stats_card()
-
-	# Re-apply sizes after rebuilding
 	_on_resized()
 
 func _make_card_container() -> PanelContainer:
@@ -333,7 +337,9 @@ func _make_card_container() -> PanelContainer:
 	card.add_theme_stylebox_override("panel", sb)
 	return card
 
-# ---------- Stats card helpers ----------
+# -----------------------------------------------------------------------------
+# Stats card
+# -----------------------------------------------------------------------------
 func _add_stats_card() -> void:
 	_stats_card = _make_card_container()
 	offers_grid.add_child(_stats_card)
@@ -390,7 +396,9 @@ func _build_stats_text() -> String:
 			out2 += "\n"
 	return out2
 
-# ---------- Actions ----------
+# -----------------------------------------------------------------------------
+# Actions
+# -----------------------------------------------------------------------------
 func _on_lock_toggled(index:int, btn:Button) -> void:
 	_slot_locked[index] = btn.button_pressed
 	btn.text = "Unlock" if btn.button_pressed else "Lock"
@@ -401,15 +409,14 @@ func _on_buy(index:int) -> void:
 	if index < 0 or index >= _offers.size():
 		return
 	var key: String = _offers[index]
-	var lvl: int = GameState.get_upgrade(key, 0)
+	var lvl: int = GameState.get_item_count(key)   
 	var max_lvl: int = _get_max_level(key)
 	if lvl >= max_lvl:
 		return
 
 	var cost: int = GameState.get_upgrade_cost(key)
-	if not GameState.spend_biscuits(cost):
+	if not GameState.buy_entry(key, lvl):
 		return
-	GameState.set_upgrade(key, lvl + 1)
 
 	if not _slot_locked[index]:
 		var replacement: Array[String] = _roll_offers(1)
@@ -434,30 +441,35 @@ func _on_reroll() -> void:
 func _on_continue() -> void:
 	emit_signal("continue_pressed")
 
-# ---------- Pretty text / helpers ----------
+# -----------------------------------------------------------------------------
+# Text helpers
+# -----------------------------------------------------------------------------
 func _upgrade_title(key:String, lvl:int, max_lvl:int) -> String:
 	var name := key.capitalize()
-	if typeof(UpgradeDB) != TYPE_NIL and UpgradeDB.has(key):
-		var def: Resource = UpgradeDB.get_def(key)
-		if def:
-			name = _res_str(def, "display_name", name)
+	if DB and DB.is_ready() and DB.has(key):
+		var def: Dictionary = DB.get_entry(key)
+		if not def.is_empty():
+			name = String(def.get("name", name))
 	return "%s  (Lv %d/%d)" % [name, lvl, max_lvl]
 
 func _upgrade_desc(key:String) -> String:
-	if typeof(UpgradeDB) != TYPE_NIL and UpgradeDB.has(key):
-		var def: Resource = UpgradeDB.get_def(key)
-		if def:
-			return _res_str(def, "description", key)
-	return key  # fallback
+	if DB and DB.is_ready() and DB.has(key):
+		var def: Dictionary = DB.get_entry(key)
+		if not def.is_empty():
+			return String(def.get("desc", key))
+	return key
 
 func _get_max_level(key:String) -> int:
-	if typeof(UpgradeDB) != TYPE_NIL and UpgradeDB.has(key):
-		var def: Resource = UpgradeDB.get_def(key)
-		if def:
+	if DB and DB.is_ready() and DB.has(key):
+		var def: Dictionary = DB.get_entry(key)
+		if not def.is_empty():
+			var typ := String(def.get("type", "item"))
+			if typ == "weapon":
+				return 1
 			var m = def.get("max_level")
 			if typeof(m) != TYPE_NIL:
 				return int(m)
-	return 10  # safe default
+	return 10
 
 func _refresh_card_buttons() -> void:
 	for ui in _card_ui:
@@ -466,9 +478,9 @@ func _refresh_card_buttons() -> void:
 			continue
 		var key: String = _offers[idx]
 
-		var lvl: int = GameState.get_upgrade(key, 0)
+		var lvl: int = GameState.get_item_count(key)    
 		var max_lvl: int = _get_max_level(key)
-		var cost: int = GameState.get_upgrade_cost(key)
+		var cost: int = GameState.get_upgrade_cost(key)  
 
 		var name_label: Label = ui["name"]
 		if name_label:
@@ -487,9 +499,3 @@ func _refresh_reroll_button() -> void:
 	if reroll_btn:
 		reroll_btn.text = "Reroll (%d)" % _reroll_cost
 		reroll_btn.disabled = GameState.biscuits < _reroll_cost
-
-func _res_str(res:Resource, prop:String, fallback:String="") -> String:
-	if res == null:
-		return fallback
-	var v = res.get(prop)
-	return fallback if typeof(v) == TYPE_NIL else String(v)

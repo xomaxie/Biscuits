@@ -1,18 +1,30 @@
 extends Node2D
 
+# -----------------------------------------------------------------------------
+# Exports
+# -----------------------------------------------------------------------------
 @export var enemy_scene: PackedScene
-@export var spawn_margin: float = 48.0  
+@export var spawn_margin: float = 48.0
 @export var spawn_interval: float = 0.9
 @export var max_enemies: int = 120
 
+# -----------------------------------------------------------------------------
+# Runtime state
+# -----------------------------------------------------------------------------
 var _enabled: bool = false
 var _timer: float = 0.0
 var _nexus: Node2D = null
 var _container: Node = null
 
+# -----------------------------------------------------------------------------
+# Lifecycle
+# -----------------------------------------------------------------------------
 func _ready() -> void:
 	randomize()
 
+# -----------------------------------------------------------------------------
+# Configuration
+# -----------------------------------------------------------------------------
 func configure(nexus: Node2D, container: Node) -> void:
 	_nexus = nexus
 	_container = container
@@ -24,6 +36,9 @@ func set_enabled(flag: bool) -> void:
 func set_spawn_interval(seconds: float) -> void:
 	spawn_interval = max(0.05, seconds)
 
+# -----------------------------------------------------------------------------
+# Physics
+# -----------------------------------------------------------------------------
 func _physics_process(delta: float) -> void:
 	if not _enabled:
 		return
@@ -37,12 +52,15 @@ func _physics_process(delta: float) -> void:
 		_timer = spawn_interval
 		_spawn_one()
 
+# -----------------------------------------------------------------------------
+# Spawning
+# -----------------------------------------------------------------------------
 func _spawn_one() -> void:
 	var rect: Rect2 = _get_world_visible_rect()
 	if rect.size == Vector2.ZERO:
 		return
 
-	var side: int = randi() % 4  # 0 top, 1 right, 2 bottom, 3 left
+	var side: int = randi() % 4
 	var pos: Vector2 = Vector2.ZERO
 	match side:
 		0:
@@ -68,21 +86,20 @@ func _spawn_one() -> void:
 	if e is Node2D:
 		(e as Node2D).global_position = pos
 
-	# Also call method after add_child to cache direct reference
 	if _nexus != null and e.has_method("set_target"):
 		e.set_target(_nexus)
 
-# --- Helpers -----------------------------------------------------------------
-
+# -----------------------------------------------------------------------------
+# Helpers
+# -----------------------------------------------------------------------------
 func _get_world_visible_rect() -> Rect2:
 	var cam: Camera2D = get_viewport().get_camera_2d()
 	if cam != null:
-		var center: Vector2 = cam.get_screen_center_position()     # world coords
-		var vp_size: Vector2 = get_viewport_rect().size            # pixels
-		var half: Vector2 = vp_size * 0.5 * cam.zoom               # world half-size (zoom-aware)
+		var center: Vector2 = cam.get_screen_center_position()
+		var vp_size: Vector2 = get_viewport_rect().size
+		var half: Vector2 = vp_size * 0.5 * cam.zoom
 		var top_left: Vector2 = center - half
 		return Rect2(top_left, vp_size * cam.zoom)
-	# Fallback: viewport rect in local coords (not camera-aware)
 	return Rect2(get_viewport().get_visible_rect())
 
 func _has_property(obj: Object, prop: String) -> bool:

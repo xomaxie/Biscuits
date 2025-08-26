@@ -1,112 +1,154 @@
-# res://data/upgrades/upgrade_db.gd
 extends Node
 
+# -----------------------------------------------------------------------------
+# Signals
+# -----------------------------------------------------------------------------
 signal db_ready
 
-@export var upgrades_folder: String = "res://data/upgrades"  # optional scan folder
+# -----------------------------------------------------------------------------
+# Exports
+# -----------------------------------------------------------------------------
+@export_file("*.json") var upgrades_json_path: String = "res://data/upgrades/upgrades.json"
 
-# Explicit preloads force the exporter (incl. HTML5) to pack these resources.
-const REG := {
-	"damage":      preload("res://data/upgrades/damage.tres"),
-	"firerate":    preload("res://data/upgrades/firerate.tres"),
-	"range":       preload("res://data/upgrades/range.tres"),
-	"pickup":      preload("res://data/upgrades/pickup.tres"),
-	"projectiles": preload("res://data/upgrades/projectiles.tres"),
-	"movespeed":   preload("res://data/upgrades/movespeed.tres"),
-}
+# -----------------------------------------------------------------------------
+# Public accessors
+# -----------------------------------------------------------------------------
+var is_loaded: bool = false
+var version: int = 1
 
-var _defs_by_key: Dictionary = {}         # key: String -> Resource
+# -----------------------------------------------------------------------------
+# Internal state
+# -----------------------------------------------------------------------------
+var _by_key: Dictionary = {}
 var _keys_sorted: Array[String] = []
-var _is_ready: bool = false
+var _by_type: Dictionary = { "item": [], "weapon": [] }
 
+# -----------------------------------------------------------------------------
+# Lifecycle
+# -----------------------------------------------------------------------------
 func _ready() -> void:
-	_load_all()
+	_reload()
 
-func is_ready() -> bool:
-	return _is_ready
-
-func _load_all() -> void:
-	_defs_by_key.clear()
+func _reload() -> void:
+	is_loaded = false
+	_by_key.clear()
 	_keys_sorted.clear()
+	_by_type = { "item": [], "weapon": [] }
 
-	# 1) Register preloaded resources first (works on HTML5)
-	for k in REG.keys():
-		var r: Resource = REG[k]
-		if r != null:
-			_defs_by_key[k] = r
-
-	# 2) OPTIONAL: scan folder to include any additional .tres
-	#    (on HTML5 this only works if those files are packed in the export)
-	var dir := DirAccess.open(upgrades_folder)
-	if dir != null:
-		dir.list_dir_begin()
-		while true:
-			var f := dir.get_next()
-			if f == "":
-				break
-			if dir.current_is_dir():
-				continue
-			if not f.ends_with(".tres"):
-				continue
-
-			var path := upgrades_folder.path_join(f)
-			var res: Resource = ResourceLoader.load(path)
-			if res == null:
-				push_warning("UpgradeDB: failed to load %s" % path)
-				continue
-
-			# Expect each .tres to have an exported 'key' property
-			var k2_val: Variant = res.get("key")   # explicit type avoids Variant inference warning
-			if typeof(k2_val) == TYPE_NIL or String(k2_val).is_empty():
-				push_warning("UpgradeDB: resource missing/empty 'key' at %s" % path)
-				continue
-
-			var k2: String = String(k2_val)
-			_defs_by_key[k2] = res
-		dir.list_dir_end()
+	var text := ""
+	var ok := true
+	if not FileAccess.file_exists(upgrades_json_path):
+		push_error("[UpgradeDB] JSON not found at: %s" % upgrades_json_path)
+		ok = false
 	else:
-		# Not fatal on HTML5, we still have preloads
-		if OS.has_feature("web"):
-			print("UpgradeDB: (web) DirAccess scan unavailable; using preloads only")
+		text = FileAccess.get_file_as_string(upgrades_json_path)
 
-	# 3) Build sorted key list (by 'order' then name)
-	var pairs: Array[Dictionary] = []
-	for kk in _defs_by_key.keys():
-		var d: Resource = _defs_by_key[kk]
-		var ord_i: int = 0
-		var ord_val: Variant = d.get("order")
-		if typeof(ord_val) != TYPE_NIL:
-			ord_i = int(ord_val)
-		pairs.append({ "key": String(kk), "order": ord_i })
+	if ok:
+		var root_v: Variant = JSON.parse_string(text)
+		if typeof(root_v) != TYPE_DICTIONARY:
+			push_error("[UpgradeDB] JSON root must be a Dictionary.")
+			ok = false
+		else:
+			var root: Dictionary = root_v
+			version = int(root.get("version", 1))
 
-	pairs.sort_custom(func(a, b):
-		var ao: int = int(a["order"])
-		var bo: int = int(b["order"])
-		return String(a["key"]) < String(b["key"]) if ao == bo else ao < bo
-	)
+			var entries: Array = []
+			entries.append_array(root.get("items", []))
+			entries.append_array(root.get("weapons", []))
 
-	for p in pairs:
-		_keys_sorted.append(String(p["key"]))
+			for e_v in entries:
+				if typeof(e_v) != TYPE_DICTIONARY:
+					continue
+				var e: Dictionary = e_v
+				var key_s := String(e.get("key", ""))
+				if key_s.is_empty():
+					push_warning("[UpgradeDB] Skipping entry with empty key.")
+					continue
+				e["name"] = String(e.get("name", key_s.capitalize()))
+				e["type"] = String(e.get("type", "item"))
+				e["rarity"] = String(e.get("rarity", "common"))
+				e["order"] = int(e.get("order", 0))
+				e["cost_base"] = int(e.get("cost_base", 20))
+				e["tags"] = e.get("tags", [])
+				e["desc"] = String(e.get("desc", ""))
 
-	_is_ready = true
-	emit_signal("db_ready")
+				_by_key[key_s] = e
+				if not _by_type.has(e["type"]):
+					_by_type[e["type"]] = []
+				_by_type[e["type"]].append(key_s)
+
+			var pairs: Array[Dictionary] = []
+			for k in _by_key.keys():
+				var d: Dictionary = _by_key[k]
+				pairs.append({
+					"key": String(k),
+					"order": int(d.get("order", 0)),
+					"name": String(d.get("name", k))
+				})
+			pairs.sort_custom(func(a, b):
+				var ao: int = int(a["order"])
+				var bo: int = int(b["order"])
+				if ao == bo:
+					return String(a["name"]) < String(b["name"])
+				return ao < bo
+			)
+			for p in pairs:
+				_keys_sorted.append(String(p["key"]))
+
+	is_loaded = ok
+	if is_loaded:
+		emit_signal("db_ready")
+
+# -----------------------------------------------------------------------------
+# Public API
+# -----------------------------------------------------------------------------
+func is_ready() -> bool:
+	return is_loaded
+
+func get_entry(key: String) -> Dictionary:
+	return _by_key.get(key, {})
 
 func has(key: String) -> bool:
-	return _defs_by_key.has(key)
+	return _by_key.has(key)
 
-func get_def(key: String) -> Resource:
-	return _defs_by_key.get(key, null)
-
-func keys_sorted() -> Array[String]:
-	return _keys_sorted.duplicate()
+func keys_sorted(of_type: String = "") -> Array[String]:
+	if of_type == "" or not _by_type.has(of_type):
+		return _keys_sorted.duplicate()
+	return (_by_type[of_type] as Array).duplicate()
 
 func compute_cost_next_level(key: String, current_level: int) -> int:
-	var def: Resource = get_def(key)
-	if def == null:
+	var e: Dictionary = get_entry(key)
+	if e.is_empty():
 		return 9999
-	var cost_base: Variant = def.get("cost_base")
-	if typeof(cost_base) == TYPE_NIL:
-		return 9999
+	var base_cost := float(e.get("cost_base", 20))
 	var next_level := current_level + 1
-	var cost := float(cost_base) * (1.0 + 0.2 * float(next_level - 1))
+	var cost := base_cost * (1.0 + 0.2 * float(next_level - 1))
 	return int(ceil(cost))
+
+func roll_offers(count: int, rng: RandomNumberGenerator, allowed_types: Array[String] = [], allowed_rarities: Array[String] = []) -> Array[String]:
+	var pool: Array[String] = []
+	if allowed_types.is_empty():
+		pool = _keys_sorted.duplicate()
+	else:
+		for t in allowed_types:
+			if _by_type.has(t):
+				pool.append_array(_by_type[t])
+
+	if not allowed_rarities.is_empty():
+		var f: Array[String] = []
+		for k in pool:
+			var r: String = String(_by_key[k].get("rarity", "common"))
+			if r in allowed_rarities:
+				f.append(k)
+		pool = f
+
+	var offers: Array[String] = []
+	var pool_copy := pool.duplicate()
+	while offers.size() < count and pool_copy.size() > 0:
+		var idx := rng.randi_range(0, pool_copy.size() - 1)
+		offers.append(pool_copy[idx])
+		pool_copy.remove_at(idx)
+	return offers
+
+func reload_from_disk() -> void:
+	_reload()

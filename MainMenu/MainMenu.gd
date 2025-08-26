@@ -1,9 +1,14 @@
 extends Control
 
-# Adjust these paths to match your project’s scene files
+# -----------------------------------------------------------------------------
+# Scene paths
+# -----------------------------------------------------------------------------
 const START_SCENE := "res://intro.tscn"
 const TEST_SCENE  := "res://scenes/Test.tscn"
 
+# -----------------------------------------------------------------------------
+# Button callbacks
+# -----------------------------------------------------------------------------
 func _on_start_btn_button_down() -> void:
 	print("DEBUG: Start button pressed, loading ", START_SCENE)
 	get_tree().change_scene_to_file(START_SCENE)
@@ -19,7 +24,6 @@ func _on_settings_btn_2_button_down() -> void:
 
 func _on_credits_btn_button_down() -> void:
 	print("DEBUG: Credits button pressed")
-	# TODO: open credits scene
 	get_tree().change_scene_to_file("res://MainMenu/Credits.tscn")
 
 func _on_quit_btn_button_down() -> void:

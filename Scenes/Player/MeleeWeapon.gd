@@ -1,16 +1,25 @@
 extends Node2D
 
-@export var swing_rate: float = 1.6         # slashes per second
+# -----------------------------------------------------------------------------
+# Exports
+# -----------------------------------------------------------------------------
+@export var swing_rate: float = 1.6
 @export var damage: int = 2
 @export var slash_radius: float = 28.0
-@export var active_time: float = 0.09       # hitbox on-time
+@export var active_time: float = 0.09
 
+# -----------------------------------------------------------------------------
+# Runtime state
+# -----------------------------------------------------------------------------
 var _cooldown := 0.0
 var _active := false
 var _timer := 0.0
 var _area: Area2D
 var _shape: CollisionShape2D
 
+# -----------------------------------------------------------------------------
+# Lifecycle
+# -----------------------------------------------------------------------------
 func _ready() -> void:
 	_area = Area2D.new()
 	_shape = CollisionShape2D.new()
@@ -24,10 +33,12 @@ func _ready() -> void:
 	_area.area_entered.connect(_on_area_entered)
 	_area.body_entered.connect(_on_body_entered)
 
+# -----------------------------------------------------------------------------
+# Physics
+# -----------------------------------------------------------------------------
 func _physics_process(delta: float) -> void:
 	_cooldown -= delta
 	if not _active and _cooldown <= 0.0:
-		# brief hit window at the weapon's tip
 		_active = true
 		_timer = active_time
 		_area.global_position = to_global(Vector2.RIGHT.rotated(rotation) * slash_radius)
@@ -39,12 +50,14 @@ func _physics_process(delta: float) -> void:
 			_active = false
 			_area.monitoring = false
 
+# -----------------------------------------------------------------------------
+# Hit handling
+# -----------------------------------------------------------------------------
 func _hit(node: Node) -> void:
 	if node and node.has_method("take_hit"):
 		node.take_hit(damage)
 
 func _on_area_entered(a: Area2D) -> void:
-	# if enemies are Areas (optional)
 	_hit(a.get_parent())
 
 func _on_body_entered(b: Node) -> void:

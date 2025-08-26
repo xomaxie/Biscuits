@@ -1,11 +1,20 @@
 extends Control
 
+# -----------------------------------------------------------------------------
+# Exports
+# -----------------------------------------------------------------------------
 @export_file("*.tscn") var next_scene: String = "res://Scenes/Game.tscn"
 @export var auto_continue_after: float = 0.0 
 
+# -----------------------------------------------------------------------------
+# Runtime state
+# -----------------------------------------------------------------------------
 var _can_start := false
 var _blink_t := 0.0
 
+# -----------------------------------------------------------------------------
+# Lifecycle
+# -----------------------------------------------------------------------------
 func _ready() -> void:
 	assert($Fade is ColorRect)
 	assert($Bg is ColorRect)
@@ -32,6 +41,9 @@ func _process(delta: float) -> void:
 	var a := 0.45 + 0.35 * sin(_blink_t * 4.0)
 	$Center/VBox/AnyKey.modulate.a = clamp(a, 0.1, 0.85)
 
+# -----------------------------------------------------------------------------
+# Input
+# -----------------------------------------------------------------------------
 func _unhandled_input(event: InputEvent) -> void:
 	if not _can_start:
 		return
@@ -40,6 +52,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	or (event is InputEventJoypadButton and event.pressed):
 		_start_game()
 
+# -----------------------------------------------------------------------------
+# Start transition
+# -----------------------------------------------------------------------------
 func _start_game() -> void:
 	_can_start = false
 	var t := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)

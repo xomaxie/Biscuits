@@ -1,30 +1,38 @@
 extends CharacterBody2D
 
-@export var move_speed: float = 230.0   # base speed from inspector
+# -----------------------------------------------------------------------------
+# Exports
+# -----------------------------------------------------------------------------
+@export var move_speed: float = 230.0
 
+# -----------------------------------------------------------------------------
+# Node refs
+# -----------------------------------------------------------------------------
 @onready var weapon_manager: Node2D    = $WeaponManager
 @onready var cam: Camera2D             = $Camera2D
 @onready var sprite: AnimatedSprite2D  = $Sprite2D
 
-var current_speed: float = 230.0        # runtime speed after upgrades
-var _last_dir: Vector2 = Vector2.DOWN   # default face "Backward" (toward camera, +Y)
+# -----------------------------------------------------------------------------
+# Runtime state
+# -----------------------------------------------------------------------------
+var current_speed: float = 230.0
+var _last_dir: Vector2 = Vector2.DOWN
 
 var _gs: Node = null
-var _last_movespeed_level: int = -999   # cache to avoid unnecessary recomputes
+var _last_movespeed_level: int = -999
 
+# -----------------------------------------------------------------------------
+# Lifecycle
+# -----------------------------------------------------------------------------
 func _ready() -> void:
 	add_to_group("player")
 
-	# Resolve GameState autoload reliably
 	_gs = get_node_or_null("/root/GameState")
 
-	# Initialize speed from upgrades now and subscribe for future changes
 	_apply_move_speed_upgrade()
 	if _gs:
-		# GameState.upgrades_changed has NO args in your code
 		_gs.upgrades_changed.connect(_on_upgrades_changed)
 
-	# Camera: make current & snap on first frame
 	if cam and not cam.is_current():
 		cam.make_current()
 	if cam:
@@ -33,12 +41,12 @@ func _ready() -> void:
 		await get_tree().process_frame
 		cam.position_smoothing_enabled = was_smoothing
 
-	# show initial idle
 	_play_anim(_compose_name(false, _last_dir))
 
+# -----------------------------------------------------------------------------
+# Physics
+# -----------------------------------------------------------------------------
 func _physics_process(_dt: float) -> void:
-	# Safety net: if purchase happened while paused and signal was missed,
-	# refresh when the level changes.
 	_try_refresh_speed_from_gamestate()
 
 	var v: Vector2 = Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -53,7 +61,9 @@ func _physics_process(_dt: float) -> void:
 		dir = v
 	_play_anim(_compose_name(moving, dir))
 
-# ---------- Upgrades ----------
+# -----------------------------------------------------------------------------
+# Upgrades
+# -----------------------------------------------------------------------------
 func _on_upgrades_changed() -> void:
 	_apply_move_speed_upgrade()
 
@@ -62,7 +72,6 @@ func _apply_move_speed_upgrade() -> void:
 	if _gs and _gs.has_method("get_upgrade"):
 		lvl = _gs.get_upgrade("movespeed", 0)
 	_last_movespeed_level = lvl
-	# Matches shop text: +40 per level
 	current_speed = move_speed + 40.0 * float(lvl)
 
 func _try_refresh_speed_from_gamestate() -> void:
@@ -72,7 +81,9 @@ func _try_refresh_speed_from_gamestate() -> void:
 			_last_movespeed_level = lvl_now
 			current_speed = move_speed + 40.0 * float(lvl_now)
 
-# ---------------- Animation selection ----------------
+# -----------------------------------------------------------------------------
+# Animation selection
+# -----------------------------------------------------------------------------
 func _compose_name(moving: bool, dir: Vector2) -> String:
 	var n: Vector2 = dir.normalized()
 
@@ -84,9 +95,9 @@ func _compose_name(moving: bool, dir: Vector2) -> String:
 
 	var sy: int = 0
 	if n.y > 0.35:
-		sy = 1           # +Y = Backward (facing camera)
+		sy = 1
 	elif n.y < -0.35:
-		sy = -1          # -Y = Forward (looking away)
+		sy = -1
 
 	var horiz: String = ""
 	if sx == 1:
@@ -106,12 +117,12 @@ func _compose_name(moving: bool, dir: Vector2) -> String:
 
 	var candidates: Array[String] = []
 	if horiz != "" and vert != "":
-		candidates.append(base + horiz + vert)   # e.g. RunRightBackward
+		candidates.append(base + horiz + vert)
 	if horiz != "":
-		candidates.append(base + horiz)          # e.g. RunRight
+		candidates.append(base + horiz)
 	if vert != "":
-		candidates.append(base + vert)           # e.g. RunBackward
-	candidates.append(base)                      # e.g. Run / Idle
+		candidates.append(base + vert)
+	candidates.append(base)
 
 	return _first_existing_animation(candidates)
 
