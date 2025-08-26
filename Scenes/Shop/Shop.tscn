@@ -1,0 +1,62 @@
+[gd_scene load_steps=2 format=3 uid="uid://q7dhpi6lm4tl"]
+
+[ext_resource type="Script" uid="uid://cxolonuvm2nv4" path="res://Scenes/Shop/shop.gd" id="1_4kyni"]
+
+[node name="Shop" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_4kyni")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.117647, 0.160784, 0.231373, 1)
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Vbox" type="VBoxContainer" parent="Panel"]
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Label" parent="Panel/Vbox"]
+layout_mode = 2
+
+[node name="Biscuits" type="Label" parent="Panel/Vbox"]
+layout_mode = 2
+text = "32"
+horizontal_alignment = 2
+
+[node name="Offers" type="HBoxContainer" parent="Panel/Vbox"]
+layout_mode = 2
+
+[node name="Buttons" type="HBoxContainer" parent="Panel/Vbox"]
+layout_mode = 2
+
+[node name="Reroll" type="Button" parent="Panel/Vbox/Buttons"]
+layout_mode = 2
+text = "Reroll"
+
+[node name="Continue" type="Button" parent="Panel/Vbox/Buttons"]
+layout_mode = 2
+text = "Continue"
+icon_alignment = 1

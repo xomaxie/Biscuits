@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="UpgradeDef" load_steps=2 format=3 uid="uid://h6tlhwuw7wj3"]
+
+[ext_resource type="Script" uid="uid://b6b1o8b8umm1k" path="res://data/upgrades/upgrade_def.gd" id="1_ep6jo"]
+
+[resource]
+script = ExtResource("1_ep6jo")
+key = "projectiles"
+display_name = "Extra Projectiles"
+description = "Fires +1 additional projectile per shot (stacks)."
+type = "add"
+stat = "projectiles_add"
+per_level = 1.0
+max_level = 5
+cost_base = 6
+order = 5
+side_effects = Array[Dictionary]([{
+"stat": "spread_deg_add",
+"type": "add",
+"value": 5.0
+}])
+metadata/_custom_type_script = "uid://b6b1o8b8umm1k"

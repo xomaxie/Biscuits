@@ -1018,7 +1018,6 @@ shape = SubResource("CircleShape2D_esmjy")
 position = Vector2(-15, -86)
 script = ExtResource("3_jmcll")
 starting_ranged_weapon = ExtResource("4_ude3g")
-starting_ranged_count = 2
 orbit_speed = 1.0
 animate_orbit = true
 arc_radius = 60.0

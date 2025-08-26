@@ -1,21 +1,26 @@
 extends Node2D
 
 # --- Node refs ---
-@onready var nexus: Node            = $Nexus
-@onready var spawner: Node          = $EnemySpawner
-@onready var enemies_container: Node = $Enemies
-@onready var wave_label: Label      = $UI/TopBar/WaveLabel
-@onready var biscuit_label: Label   = $UI/TopBar/BiscuitLabel
-@onready var nexus_bar: Range       = $UI/NexusBar
-@onready var prep_timer: Timer      = $PrepTimer
-@onready var wave_timer: Timer      = $WaveTimer
-@onready var barrel_spawner: Node   = $BarrelSpawner 
+@onready var nexus: Node                 = $Nexus
+@onready var spawner: Node               = $EnemySpawner
+@onready var enemies_container: Node     = $Enemies
+@onready var wave_label: Label           = $UI/TopBar/WaveLabel
+@onready var biscuit_label: Label        = $UI/TopBar/BiscuitLabel
+@onready var nexus_bar: Range            = $UI/NexusBar
+@onready var prep_timer: Timer           = $PrepTimer
+@onready var wave_timer: Timer           = $WaveTimer
+@onready var barrel_spawner: Node        = $BarrelSpawner
+@onready var shop_ui: ShopUI = $UI/Shop
 
 # --- Tunables ---
-@export var prep_duration: float = 15.0
+@export var prep_duration: float = 5
 @export var wave_duration: float = 25.0
 
 func _ready() -> void:
+	# Shop
+	shop_ui.hide()
+	shop_ui.continue_pressed.connect(_on_shop_continue)
+
 	# Timers
 	prep_timer.one_shot = true
 	wave_timer.one_shot = true
@@ -47,7 +52,7 @@ func _ready() -> void:
 	# Start a new run and enter PREP
 	GameState.start_run()
 	_enter_prep()
-	_refresh_timer_ui() 
+	_refresh_timer_ui()
 
 func _process(_delta: float) -> void:
 	_refresh_timer_ui()
@@ -69,11 +74,25 @@ func _start_wave() -> void:
 		barrel_spawner.on_wave_started(GameState.wave)
 	wave_timer.start(wave_duration)
 
+func _enter_shop() -> void:
+	_set_spawning(false)
+	# Pause gameplay, show shop overlay (shop_ui has pause_mode=PROCESS)
+	get_tree().paused = true
+	if wave_label:
+		wave_label.text = "Shop — Spend your biscuits"
+	shop_ui.show()
+
 func _on_prep_timeout() -> void:
 	_start_wave()
 
 func _on_wave_timeout() -> void:
-	_set_spawning(false)
+	# Wave ended → go to shop (do NOT advance wave yet)
+	_enter_shop()
+
+func _on_shop_continue() -> void:
+	# Leaving shop → advance wave, resume game, return to PREP
+	shop_ui.hide()
+	get_tree().paused = false
 	GameState.next_wave()
 	_enter_prep()
 
@@ -83,6 +102,12 @@ func _set_spawning(enabled: bool) -> void:
 
 # --- UI updates ---
 func _refresh_timer_ui() -> void:
+	# If paused for shop, keep the shop label
+	if get_tree().paused and shop_ui.visible:
+		if wave_label:
+			wave_label.text = "Shop — Spend your biscuits"
+		return
+
 	match GameState.phase:
 		GameState.Phase.PREP:
 			if prep_timer and prep_timer.time_left > 0.0:
@@ -101,7 +126,8 @@ func _on_biscuits_changed(total:int, _delta:int) -> void:
 	if biscuit_label:
 		biscuit_label.text = "Biscuits: %d" % total
 
-func _on_wave_changed(new_wave:int) -> void:
+func _on_wave_changed(_new_wave:int) -> void:
+	# (Optional) place per-wave UI cues here
 	pass
 
 func _on_phase_changed(_p:int) -> void:
@@ -112,7 +138,10 @@ func _on_run_started() -> void:
 	_on_phase_changed(GameState.phase)
 
 func _on_run_ended(_victory:bool) -> void:
-	pass
+	# Ensure shop is closed and game is unpaused on game over
+	if shop_ui:
+		shop_ui.hide()
+	get_tree().paused = false
 
 func add_biscuits(amount:int) -> void:
 	GameState.add_biscuits(max(0, amount))
@@ -126,7 +155,10 @@ func _on_nexus_hp_changed(current:int, maxv:int) -> void:
 func _on_nexus_destroyed() -> void:
 	GameState.end_run(false)
 	_set_spawning(false)
-	if wave_timer: wave_timer.stop()
-	if prep_timer: prep_timer.stop()
-	for c in enemies_container.get_children():
-		c.queue_free()
+	if wave_timer:
+		wave_timer.stop()
+	if prep_timer:
+		prep_timer.stop()
+	if enemies_container:
+		for c in enemies_container.get_children():
+			c.queue_free()

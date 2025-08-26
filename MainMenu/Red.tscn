@@ -154,7 +154,7 @@ grow_horizontal = 0
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.7, 0.3, 0.3, 0.8)
 theme_override_font_sizes/font_size = 10
-text = "v0.01 by Max & David"
+text = "v0.02 by Max & David"
 horizontal_alignment = 2
 
 [connection signal="button_down" from="UI/MainContainer/MenuButtons/StartBtn" to="." method="_on_start_btn_button_down"]

@@ -17,6 +17,12 @@ var value:int = 1
 @export var sfx_spawn_path:NodePath
 @export var anim_player_path:NodePath
 
+# --- Upgrade-driven baselines ---
+@export var base_magnet_radius: float = 160.0
+@export var magnet_radius_per_level: float = 120.0
+@export var base_max_speed: float = 560.0
+@export var max_speed_per_level: float = 40.0  
+
 var _vel:Vector2 = Vector2.ZERO
 var _player:Node2D
 var _age:float = 0.0
@@ -46,8 +52,28 @@ func _ready() -> void:
 	if players.size() > 0:
 		_player = players[0] as Node2D
 
+	# Apply current upgrade at spawn and subscribe for future changes
+	_apply_pickup_upgrade()
+	if Engine.has_singleton("GameState"):
+		GameState.upgrades_changed.connect(_on_upgrade_changed)
+
 	body_entered.connect(_on_body_entered)
 	area_entered.connect(_on_area_entered)
+
+func _on_upgrade_changed(key:String, _lvl:int) -> void:
+	# Only care about the pickup upgrade for biscuits
+	if key == "pickup":
+		_apply_pickup_upgrade()
+
+func _apply_pickup_upgrade() -> void:
+	var lvl:int = 0
+	if Engine.has_singleton("GameState"):
+		lvl = GameState.get_upgrade("pickup", 0)
+
+	# Radius grows with level
+	magnet_radius = base_magnet_radius + magnet_radius_per_level * float(lvl)
+
+	max_speed = base_max_speed + max_speed_per_level * float(lvl)
 
 func _physics_process(delta:float) -> void:
 	if _fading:

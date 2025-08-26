@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="UpgradeDef" load_steps=2 format=3 uid="uid://b8qf6ai8urp4q"]
+
+[ext_resource type="Script" uid="uid://b6b1o8b8umm1k" path="res://data/upgrades/upgrade_def.gd" id="1_ep6jo"]
+
+[resource]
+script = ExtResource("1_ep6jo")
+key = "damage"
+display_name = "Sharpened Spoon"
+description = "+10% Damage per level"
+type = "mul"
+stat = "damage_mult"
+per_level = 0.1
+max_level = 10
+cost_base = 6
+order = 1
+side_effects = Array[Dictionary]([])
+metadata/_custom_type_script = "uid://b6b1o8b8umm1k"

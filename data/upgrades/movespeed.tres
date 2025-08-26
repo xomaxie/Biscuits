@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="UpgradeDef" load_steps=2 format=3 uid="uid://babprkvt35st2"]
+
+[ext_resource type="Script" uid="uid://b6b1o8b8umm1k" path="res://data/upgrades/upgrade_def.gd" id="1_ep6jo"]
+
+[resource]
+script = ExtResource("1_ep6jo")
+key = "movespeed"
+display_name = "Greased Boots"
+description = "+40 Move Speed per level"
+type = "add"
+stat = "move_speed"
+per_level = 40.0
+max_level = 5
+cost_base = 9
+order = 6
+side_effects = Array[Dictionary]([])
+metadata/_custom_type_script = "uid://b6b1o8b8umm1k"

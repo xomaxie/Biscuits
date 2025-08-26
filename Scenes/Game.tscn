@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=4 uid="uid://c8it8ws3qx32f"]
+[gd_scene load_steps=29 format=4 uid="uid://c8it8ws3qx32f"]
 
 [ext_resource type="Script" uid="uid://cyf26hoy0a1wi" path="res://Scenes/game.gd" id="1_b2bpf"]
 [ext_resource type="Script" uid="uid://u1jvctbv84g6" path="res://Scenes/nexus.gd" id="2_7lihs"]
@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://dfhos6dc1q2om" path="res://Scenes/NPCs/Enemy.tscn" id="7_71axn"]
 [ext_resource type="PackedScene" uid="uid://c4mn6wxav531b" path="res://Pickups/BarrelSpawner.tscn" id="9_71axn"]
 [ext_resource type="PackedScene" uid="uid://dfocspoa7qtk7" path="res://Pickups/BiscuitBarrel.tscn" id="10_dahhg"]
+[ext_resource type="PackedScene" uid="uid://q7dhpi6lm4tl" path="res://Scenes/Shop/Shop.tscn" id="11_dahhg"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_2irst"]
 texture = ExtResource("2_fgofq")
@@ -313,6 +314,9 @@ shape = SubResource("CircleShape2D_3cx6b")
 
 [node name="UI" type="CanvasLayer" parent="."]
 
+[node name="Shop" parent="UI" instance=ExtResource("11_dahhg")]
+process_mode = 3
+
 [node name="TopBar" type="HBoxContainer" parent="UI"]
 offset_right = 40.0
 offset_bottom = 40.0
@@ -332,10 +336,11 @@ theme = ExtResource("5_bf53h")
 text = "34 Biscuits"
 horizontal_alignment = 1
 
-[node name="NexusBar" type="TextureProgressBar" parent="UI"]
-offset_left = 97.0
-offset_right = 98.0
-offset_bottom = 44.0
+[node name="NexusBar" type="ProgressBar" parent="UI"]
+offset_left = 13.0
+offset_top = 45.0
+offset_right = 17.0
+offset_bottom = 89.0
 
 [node name="PrepTimer" type="Timer" parent="."]
 wait_time = 30.0

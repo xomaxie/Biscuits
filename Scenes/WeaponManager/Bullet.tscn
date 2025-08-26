@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://cjf0rljqx3rm5" path="res://Tilesets/Guns/Shotguns/BiscuitBall.png" id="2_xtnit"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_xtnit"]
-radius = 11.0
+radius = 149.03
 
 [node name="Bullet" type="Area2D"]
 script = ExtResource("1_ob4du")

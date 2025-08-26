@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://dlsaroml2u127" path="res://Tilesets/NPCs/Bat with VFX/Bat-Run.png" id="2_52wyw"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_gwnmk"]
+radius = 46.0
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_6py02"]
 atlas = ExtResource("2_52wyw")
@@ -72,6 +73,7 @@ animations = [{
 [node name="Enemy" type="CharacterBody2D"]
 script = ExtResource("1_xfrnf")
 speed = 120.0
+hit_flash_time = 0.25
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_gwnmk")

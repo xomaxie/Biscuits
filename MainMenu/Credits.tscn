@@ -101,16 +101,17 @@ vertical_alignment = 1
 layout_mode = 2
 theme_override_fonts/normal_font = ExtResource("2_o7h06")
 theme_override_font_sizes/normal_font_size = 25
-text = "Max Anthony
------------------
-github.com/xomaxie
-xomaxie.itch.io
+bbcode_enabled = true
+text = "[center]───────────────
+[b]Game Programmers[/b]
+Max Anthony
+[url=https://xomaxie.itch.io]xomaxie.itch.io[/url]
+───────────────
 
-
+[b]Art & Map Design[/b]
 David Hawley
------------------
-davidhawley.github.com
-davidhawley.itch.io
+[url=https://davidhawley.itch.io]davidhawley.itch.io[/url]
+───────────────[/center]
 "
 fit_content = true
 horizontal_alignment = 1
@@ -140,7 +141,7 @@ grow_horizontal = 0
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.7, 0.3, 0.3, 0.8)
 theme_override_font_sizes/font_size = 10
-text = "v0.01 by Max & David"
+text = "v0.02 by Max & David"
 horizontal_alignment = 2
 
 [connection signal="button_down" from="UI/MainContainer/MenuButtons/BackBtn" to="." method="_on_back_btn_button_down"]

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="UpgradeDef" load_steps=2 format=3 uid="uid://ch66svlsr443r"]
+
+[ext_resource type="Script" uid="uid://b6b1o8b8umm1k" path="res://data/upgrades/upgrade_def.gd" id="1_ep6jo"]
+
+[resource]
+script = ExtResource("1_ep6jo")
+key = "range"
+display_name = "Long Barrel"
+description = "+80 Range per level"
+type = "add"
+stat = "range_add"
+per_level = 80.0
+max_level = 5
+cost_base = 7
+order = 3
+side_effects = Array[Dictionary]([])
+metadata/_custom_type_script = "uid://b6b1o8b8umm1k"
