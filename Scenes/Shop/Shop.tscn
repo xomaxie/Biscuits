@@ -39,6 +39,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Title" type="Label" parent="Panel/Vbox"]
+visible = false
 layout_mode = 2
 
 [node name="Biscuits" type="Label" parent="Panel/Vbox"]

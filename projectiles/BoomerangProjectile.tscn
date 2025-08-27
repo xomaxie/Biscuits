@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3 uid="uid://cr135ka0rsadd"]
+
+[ext_resource type="Script" uid="uid://c3r6k1p48clye" path="res://projectiles/boomerang_projectile.gd" id="1_5q2qp"]
+[ext_resource type="Texture2D" uid="uid://4d3vg2b6tmaq" path="res://art/weapons/eraser_boomerang.png" id="2_im52x"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_im52x"]
+radius = 27.0185
+
+[node name="BoomerangProjectile" type="Area2D"]
+collision_layer = 128
+collision_mask = 136
+script = ExtResource("1_5q2qp")
+speed = 800.0
+damage = 4
+return_speed_mult = 1.15
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_im52x")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("2_im52x")

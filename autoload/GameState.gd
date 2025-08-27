@@ -1,37 +1,52 @@
 extends Node
-# class_name GameState   # optional if you want typed access elsewhere
 
+# -----------------------------------------------------------------------------
+# Signals
+# -----------------------------------------------------------------------------
 signal biscuits_changed(new_total:int, delta:int)
 signal phase_changed(new_phase:int)
 signal wave_changed(new_wave:int)
 signal run_started()
 signal run_ended(victory:bool)
-signal upgrades_changed()                       # fired when owned item counts change
-signal weapon_purchased(key:String, data:Dictionary)  # fired when a weapon is bought
+signal upgrades_changed()
+signal weapon_purchased(key:String, data:Dictionary)
 
+# -----------------------------------------------------------------------------
+# Enums
+# -----------------------------------------------------------------------------
 enum Phase { PREP, WAVE, GAME_OVER }
 
+# -----------------------------------------------------------------------------
+# Exports
+# -----------------------------------------------------------------------------
 @export var starting_biscuits:int = 0
 
+# -----------------------------------------------------------------------------
+# Runtime state
+# -----------------------------------------------------------------------------
 var biscuits:int = 0
 var wave:int = 1
 var phase:int = Phase.PREP
 
-# Items are stackable (count). Weapons are a list (non-stacking by default).
-var _owned_items:Dictionary = {}     # key:String -> count:int
+var _owned_items:Dictionary = {}
 var _owned_weapons:Array[String] = []
 
-# --- Engine-facing/internal stat names used everywhere in gameplay math ---
-const STAT_BASE := {
-	"move_speed": 230.0,      # absolute px/s
-	"damage_mult": 1.0,       # multiplier (>=1.0)
-	"fire_rate_mult": 1.0,    # multiplier (>=1.0); >1 = faster
-	"range_add": 0.0,         # +px
-	"pickup_radius_add": 0.0, # +px
-	"projectiles_add": 0.0,   # +count
-	"spread_deg_add": 0.0,    # +deg
+# -----------------------------------------------------------------------------
+# Debug
+# -----------------------------------------------------------------------------
+const DEBUG_SPEED := false
 
-	# Extended core & meta stats (default bases)
+# -----------------------------------------------------------------------------
+# Stat base and mappings
+# -----------------------------------------------------------------------------
+const STAT_BASE := {
+	"move_speed": 230.0,
+	"damage_mult": 1.0,
+	"fire_rate_mult": 1.0,
+	"range_add": 0.0,
+	"pickup_radius_add": 0.0,
+	"projectiles_add": 0.0,
+	"spread_deg_add": 0.0,
 	"max_hp": 0.0,
 	"hp_regen": 0.0,
 	"lifesteal_pct": 0.0,
@@ -40,35 +55,32 @@ const STAT_BASE := {
 	"luck": 0.0,
 	"harvesting": 0.0,
 	"crate_bonus_biscuits": 0.0,
-
-	# Multipliers stored separately but cached here after recompute (as products)
-	"shop_price_mult": 1.0,       # derived from shop_price_pct
-	"enemy_hp_mult": 1.0,         # derived from enemy_hp_pct
-	"explosion_damage_mult": 1.0, # derived from explosion_damage_pct
-
-	# Weapon-feel adders
+	"shop_price_mult": 1.0,
+	"enemy_hp_mult": 1.0,
+	"explosion_damage_mult": 1.0,
 	"pierce_add": 0.0,
 	"knockback_add": 0.0,
-
-	# Time-based ramp config accumulator (read by EffectsManager, etc.)
-	"ramp_damage_pct_per_5s": 0.0
+	"ramp_damage_pct_per_5s": 0.0,
+	"attack_speed_pct": 0.0,
+	"attack_speed_while_still_pct": 0.0,
+	"speed_pct": 0.0
 }
 
-# Map user-facing keys (Shop/UI) to internal stat names
 const FRIENDLY_TO_INTERNAL := {
-	"damage":      "damage_mult",         # multiplier
-	"firerate":    "fire_rate_mult",      # multiplier
-	"range":       "range_add",           # +px
-	"pickup":      "pickup_radius_add",   # +px
-	"projectiles": "projectiles_add",     # +count
-	"movespeed":   "move_speed",          # absolute px/s
-	"spread":      "spread_deg_add"       # +deg
+	"damage":      "damage_mult",
+	"firerate":    "fire_rate_mult",
+	"range":       "range_add",
+	"pickup":      "pickup_radius_add",
+	"projectiles": "projectiles_add",
+	"movespeed":   "move_speed",
+	"spread":      "spread_deg_add"
 }
 
-# Cached computed stats after applying items
 var _cached_stats:Dictionary = {}
 
-# Autoload instance (JSON DB)
+# -----------------------------------------------------------------------------
+# DB hookup
+# -----------------------------------------------------------------------------
 @onready var DB: Node = get_node("/root/UpgradeDB")
 
 func _ready() -> void:
@@ -145,7 +157,6 @@ func has_weapon(key:String) -> bool:
 func get_owned_weapons() -> Array[String]:
 	return _owned_weapons.duplicate()
 
-# Compatibility with older ShopUI code:
 func get_upgrade(name:String, default_level:int=0) -> int:
 	return int(_owned_items.get(name, default_level))
 
@@ -157,50 +168,54 @@ func set_upgrade(name:String, level:int) -> void:
 		_recompute_cache()
 		emit_signal("upgrades_changed")
 
-# Preferred new API used by JSON system:
-# Returns true on success (biscuits spent + granted).
-func buy_entry(key:String, current_level:int=0) -> bool:
+func buy_entry(key: String, current_level: int = 0) -> bool:
 	if not DB.is_ready():
 		return false
 	if not DB.has(key):
 		return false
-
-	var price:int = DB.compute_cost_next_level(key, current_level)
-	# NOTE: If you implement shop price discounts globally, you can multiply here:
-	# price = int(round(price * get_shop_price_mult()))
+	var price: int = get_upgrade_cost(key)
 	if not spend_biscuits(price):
 		return false
-
-	var e:Dictionary = DB.get_entry(key)
-	var typ:String = String(e.get("type", "item"))
-
+	var e: Dictionary = DB.get_entry(key)
+	var typ: String = String(e.get("type", "item"))
 	if typ == "weapon":
 		_owned_weapons.append(key)
 		emit_signal("weapon_purchased", key, e)
 	else:
-		var prev:int = int(_owned_items.get(key, 0))
+		var prev: int = int(_owned_items.get(key, 0))
 		_owned_items[key] = prev + 1
 		_recompute_cache()
 		emit_signal("upgrades_changed")
-
 	return true
 
 # -----------------------------------------------------------------------------
-# Stat Computation
+# Stat computation
 # -----------------------------------------------------------------------------
 func _apply_effect(effect:Dictionary, add_accum:Dictionary, mul_accum:Dictionary) -> void:
 	var stat:String = String(effect.get("stat", ""))
 
 	if stat == "attack_speed_pct":
-		mul_accum["fire_rate_mult"] = float(mul_accum.get("fire_rate_mult", 1.0)) * (1.0 + float(effect.get("add", 0.0)) / 100.0)
+		var addp := float(effect.get("add", 0.0))
+		mul_accum["fire_rate_mult"] = float(mul_accum.get("fire_rate_mult", 1.0)) * (1.0 + addp / 100.0)
+		add_accum["attack_speed_pct"] = float(add_accum.get("attack_speed_pct", 0.0)) + addp
+
+	elif stat == "attack_speed_while_still_pct":
+		var add_still := float(effect.get("add", 0.0))
+		add_accum["attack_speed_while_still_pct"] = float(add_accum.get("attack_speed_while_still_pct", 0.0)) + add_still
+
+	elif stat == "speed_pct":
+		var add_speed := float(effect.get("add", 0.0))
+		add_accum["speed_pct_sum"] = float(add_accum.get("speed_pct_sum", 0.0)) + add_speed
+
 	elif stat == "damage_pct":
 		mul_accum["damage_mult"] = float(mul_accum.get("damage_mult", 1.0)) * (1.0 + float(effect.get("add", 0.0)) / 100.0)
-	elif stat == "speed_pct":
-		mul_accum["move_speed"] = float(mul_accum.get("move_speed", 1.0)) * (1.0 + float(effect.get("add", 0.0)) / 100.0)
+
 	elif stat == "shop_price_pct":
 		mul_accum["shop_price_mult"] = float(mul_accum.get("shop_price_mult", 1.0)) * (1.0 + float(effect.get("add", 0.0)) / 100.0)
+
 	elif stat == "enemy_hp_pct":
 		mul_accum["enemy_hp_mult"] = float(mul_accum.get("enemy_hp_mult", 1.0)) * (1.0 + float(effect.get("add", 0.0)) / 100.0)
+
 	elif stat == "explosion_damage_pct":
 		mul_accum["explosion_damage_mult"] = float(mul_accum.get("explosion_damage_mult", 1.0)) * (1.0 + float(effect.get("add", 0.0)) / 100.0)
 
@@ -234,20 +249,14 @@ func _apply_effect(effect:Dictionary, add_accum:Dictionary, mul_accum:Dictionary
 		add_accum["knockback_add"] = float(add_accum.get("knockback_add", 0.0)) + float(effect.get("add", 0.0))
 	elif stat == "ramp_damage_pct_per_5s":
 		add_accum["ramp_damage_pct_per_5s"] = float(add_accum.get("ramp_damage_pct_per_5s", 0.0)) + float(effect.get("add", 0.0))
-
-	# Stats present in JSON but not part of core math are no-ops here; other systems can read them.
 	else:
 		pass
 
-# Recompute cached engine-facing stats from base + all owned items
 func _recompute_cache() -> void:
 	_cached_stats.clear()
-
-	# Start with base
 	for k in STAT_BASE.keys():
 		_cached_stats[k] = STAT_BASE[k]
 
-	# Accumulate item effects:
 	var add_accum:Dictionary = {}
 	var mul_accum:Dictionary = {}
 
@@ -257,30 +266,39 @@ func _recompute_cache() -> void:
 			continue
 		if not DB.has(key):
 			continue
-
 		var e:Dictionary = DB.get_entry(key)
 		var effects:Array = e.get("effects", [])
 		if typeof(effects) != TYPE_ARRAY:
 			continue
-
 		for i in count:
 			for fx_v in effects:
 				if typeof(fx_v) != TYPE_DICTIONARY:
 					continue
 				_apply_effect(fx_v, add_accum, mul_accum)
 
-	# Apply additives
+	# Additive stats (except speed_pct_sum which is handled below)
 	for a_key in add_accum.keys():
+		if a_key == "speed_pct_sum":
+			continue
 		var base_val:float = float(_cached_stats.get(a_key, 0.0))
 		_cached_stats[a_key] = base_val + float(add_accum[a_key])
 
-	# Apply multiplicatives
+	# Linearly stacked speed pct stored separately; do NOT bake into move_speed
+	var speed_pct_sum: float = float(add_accum.get("speed_pct_sum", 0.0))
+	_cached_stats["speed_pct"] = speed_pct_sum
+
+	# Multiplicatives
 	for m_key in mul_accum.keys():
 		var base2:float = float(_cached_stats.get(m_key, 1.0))
 		_cached_stats[m_key] = base2 * float(mul_accum[m_key])
 
+	if DEBUG_SPEED:
+		var base_ms := float(STAT_BASE["move_speed"])
+		var eff_ms := base_ms * (1.0 + speed_pct_sum / 100.0)
+		print("[GS] Recompute: speed_pct=", speed_pct_sum, "% base=", base_ms, " effective=", eff_ms)
+
 # -----------------------------------------------------------------------------
-# Public Stat API (read-only during play)
+# Public stat API
 # -----------------------------------------------------------------------------
 func _compute_internal_stat(stat_name:String) -> float:
 	if _cached_stats.has(stat_name):
@@ -288,6 +306,12 @@ func _compute_internal_stat(stat_name:String) -> float:
 	return 0.0
 
 func get_stat(stat_name:String) -> float:
+	# Special-case movespeed so it always reflects current speed_pct
+	if stat_name == "movespeed":
+		var base_ms := _compute_internal_stat("move_speed")
+		var pct := _compute_internal_stat("speed_pct")
+		return base_ms * (1.0 + pct / 100.0)
+
 	if STAT_BASE.has(stat_name):
 		return _compute_internal_stat(stat_name)
 
@@ -302,22 +326,27 @@ func get_stat(stat_name:String) -> float:
 
 func get_all_stats() -> Dictionary:
 	return {
-		"movespeed":   get_stat("movespeed"),                    # px/s
-		"damage":      get_stat("damage"),                       # multiplier
-		"firerate":    get_stat("firerate"),                     # multiplier
-		"range":       get_stat("range"),                        # +px
-		"pickup":      get_stat("pickup"),                       # +px
-		"projectiles": int(round(get_stat("projectiles"))),      # count
-		"spread":      get_stat("spread"),                       # +deg
+		"movespeed":   get_stat("movespeed"),
+		"damage":      get_stat("damage"),
+		"firerate":    get_stat("firerate"),
+		"range":       get_stat("range"),
+		"pickup":      get_stat("pickup"),
+		"projectiles": int(round(get_stat("projectiles"))),
+		"spread":      get_stat("spread"),
 		"max_hp":      _compute_internal_stat("max_hp"),
 		"hp_regen":    _compute_internal_stat("hp_regen"),
 		"lifesteal":   _compute_internal_stat("lifesteal_pct"),
 		"armor":       _compute_internal_stat("armor"),
 		"dodge":       _compute_internal_stat("dodge_pct"),
-		"luck":        _compute_internal_stat("luck")
+		"luck":        _compute_internal_stat("luck"),
+		"attack_speed_pct": _compute_internal_stat("attack_speed_pct"),
+		"attack_speed_while_still_pct": _compute_internal_stat("attack_speed_while_still_pct"),
+		"speed_pct": _compute_internal_stat("speed_pct")
 	}
 
-# Handy getters for other systems (optional but convenient)
+# -----------------------------------------------------------------------------
+# Helpers for other systems
+# -----------------------------------------------------------------------------
 func get_shop_price_mult() -> float:        return _compute_internal_stat("shop_price_mult")
 func get_enemy_hp_mult() -> float:          return _compute_internal_stat("enemy_hp_mult")
 func get_explosion_damage_mult() -> float:  return _compute_internal_stat("explosion_damage_mult")
@@ -327,28 +356,28 @@ func get_ramp_damage_pct_per_5s() -> float: return _compute_internal_stat("ramp_
 func get_crate_bonus_biscuits() -> int:     return int(round(_compute_internal_stat("crate_bonus_biscuits")))
 func get_lifesteal_pct() -> float:          return _compute_internal_stat("lifesteal_pct")
 
-# Helper to compute effective weapon values from base exports (use in Weapon.gd)
 func get_effective_weapon_values(base_fire_rate:float, base_range:float, base_damage:int, base_projectiles:int, base_spread:float) -> Dictionary:
 	var fire_rate_mult:float   = get_stat("fire_rate_mult")
 	var range_add:float        = get_stat("range_add")
 	var damage_mult:float      = get_stat("damage_mult")
 	var proj_add:int           = int(round(get_stat("projectiles_add")))
 	var spread_add:float       = get_stat("spread_deg_add")
-
 	return {
 		"fire_rate": max(0.05, base_fire_rate * fire_rate_mult),
 		"range": base_range + range_add,
 		"damage": int(max(1, round(float(base_damage) * damage_mult))),
 		"projectiles": max(1, base_projectiles + proj_add),
-		"spread": max(0.0, base_spread + spread_add),
+		"spread": max(0.0, base_spread + spread_add)
 	}
 
 # -----------------------------------------------------------------------------
-# Pricing helpers (delegates to UpgradeDB JSON)
+# Pricing helpers
 # -----------------------------------------------------------------------------
-func get_upgrade_cost(upgrade_key:String) -> int:
-	var lvl:int = int(_owned_items.get(upgrade_key, 0))
-	return DB.compute_cost_next_level(upgrade_key, lvl)
+func get_upgrade_cost(upgrade_key: String) -> int:
+	var lvl: int = int(_owned_items.get(upgrade_key, 0))
+	var base: int = DB.compute_cost_next_level(upgrade_key, lvl)
+	var mult: float = max(0.1, get_shop_price_mult())
+	return max(1, int(round(float(base) * mult)))
 
 func can_level(upgrade_key:String) -> bool:
 	return DB.has(upgrade_key)

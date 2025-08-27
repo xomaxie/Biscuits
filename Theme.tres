@@ -4,5 +4,5 @@
 
 [resource]
 default_font = ExtResource("1_23v3e")
-default_font_size = 32
+default_font_size = 18
 Fonts/fonts/Superstar = ExtResource("1_23v3e")

@@ -8,20 +8,11 @@
 	  "rarity": "uncommon",
 	  "order": 10,
 	  "cost_base": 80,
-	  "tags": [
-		"max_hp",
-		"enemy_health_up"
-	  ],
+	  "tags": ["max_hp", "enemy_health_up"],
 	  "desc": "+15 Max HP; enemies have +10% health.",
 	  "effects": [
-		{
-		  "stat": "max_hp",
-		  "add": 15
-		},
-		{
-		  "stat": "enemy_hp_pct",
-		  "add": 10
-		}
+		{ "stat": "max_hp", "add": 15 },
+		{ "stat": "enemy_hp_pct", "add": 10 }
 	  ]
 	},
 	{
@@ -31,25 +22,12 @@
 	  "rarity": "uncommon",
 	  "order": 11,
 	  "cost_base": 45,
-	  "tags": [
-		"lifesteal",
-		"regen",
-		"economy_minus"
-	  ],
+	  "tags": ["lifesteal", "regen", "economy_minus"],
 	  "desc": "+2% Lifesteal; +2 HP Regeneration; -3 Harvesting.",
 	  "effects": [
-		{
-		  "stat": "lifesteal_pct",
-		  "add": 2
-		},
-		{
-		  "stat": "hp_regen",
-		  "add": 2
-		},
-		{
-		  "stat": "harvesting",
-		  "add": -3
-		}
+		{ "stat": "lifesteal_pct", "add": 2 },
+		{ "stat": "hp_regen", "add": 1 },
+		{ "stat": "harvesting", "add": -3 }
 	  ]
 	},
 	{
@@ -59,21 +37,11 @@
 	  "rarity": "rare",
 	  "order": 12,
 	  "cost_base": 60,
-	  "tags": [
-		"attack_speed",
-		"stand_still",
-		"speed_minus"
-	  ],
+	  "tags": ["attack_speed", "stand_still", "speed_minus"],
 	  "desc": "+40% Attack Speed while standing still; -10% Speed.",
 	  "effects": [
-		{
-		  "stat": "attack_speed_while_still_pct",
-		  "add": 40
-		},
-		{
-		  "stat": "speed_pct",
-		  "add": -10
-		}
+		{ "stat": "attack_speed_while_still_pct", "add": 40 },
+		{ "stat": "speed_pct", "add": -10 }
 	  ]
 	},
 	{
@@ -83,20 +51,11 @@
 	  "rarity": "common",
 	  "order": 13,
 	  "cost_base": 15,
-	  "tags": [
-		"armor",
-		"speed_minus"
-	  ],
+	  "tags": ["armor", "speed_minus"],
 	  "desc": "+1 Armor; -2% Speed.",
 	  "effects": [
-		{
-		  "stat": "armor",
-		  "add": 1
-		},
-		{
-		  "stat": "speed_pct",
-		  "add": -2
-		}
+		{ "stat": "armor", "add": 1 },
+		{ "stat": "speed_pct", "add": -2 }
 	  ]
 	},
 	{
@@ -106,20 +65,11 @@
 	  "rarity": "common",
 	  "order": 20,
 	  "cost_base": 20,
-	  "tags": [
-		"attack_speed",
-		"damage_minus"
-	  ],
+	  "tags": ["attack_speed", "damage_minus"],
 	  "desc": "+10% Attack Speed; -2% Damage.",
 	  "effects": [
-		{
-		  "stat": "attack_speed_pct",
-		  "add": 10
-		},
-		{
-		  "stat": "damage_pct",
-		  "add": -2
-		}
+		{ "stat": "attack_speed_pct", "add": 10 },
+		{ "stat": "damage_pct", "add": -2 }
 	  ]
 	},
 	{
@@ -129,20 +79,11 @@
 	  "rarity": "rare",
 	  "order": 21,
 	  "cost_base": 75,
-	  "tags": [
-		"pierce",
-		"damage_minus"
-	  ],
+	  "tags": ["pierce", "damage_minus"],
 	  "desc": "Projectiles pierce +1; -10% Damage.",
 	  "effects": [
-		{
-		  "stat": "projectile_pierce",
-		  "add": 1
-		},
-		{
-		  "stat": "damage_pct",
-		  "add": -10
-		}
+		{ "stat": "projectile_pierce", "add": 1 },
+		{ "stat": "damage_pct", "add": -10 }
 	  ]
 	},
 	{
@@ -152,10 +93,7 @@
 	  "rarity": "rare",
 	  "order": 22,
 	  "cost_base": 85,
-	  "tags": [
-		"aoe",
-		"hp_scaled"
-	  ],
+	  "tags": ["aoe", "hp_scaled"],
 	  "desc": "Shoots 6 crumbs around you every 3s dealing 6 (+50% Max HP) damage each.",
 	  "effects": [
 		{
@@ -175,20 +113,11 @@
 	  "rarity": "common",
 	  "order": 23,
 	  "cost_base": 18,
-	  "tags": [
-		"ranged_damage",
-		"knockback"
-	  ],
+	  "tags": ["ranged_damage", "knockback"],
 	  "desc": "+1 Ranged Damage; +3 Knockback.",
 	  "effects": [
-		{
-		  "stat": "ranged_damage",
-		  "add": 1
-		},
-		{
-		  "stat": "knockback",
-		  "add": 3
-		}
+		{ "stat": "ranged_damage", "add": 1 },
+		{ "stat": "knockback", "add": 3 }
 	  ]
 	},
 	{
@@ -198,21 +127,11 @@
 	  "rarity": "common",
 	  "order": 30,
 	  "cost_base": 15,
-	  "tags": [
-		"economy",
-		"crate_bonus",
-		"speed_minus"
-	  ],
-	  "desc": "+15 biscuits when you pick up a crate; -1% Speed.",
+	  "tags": ["economy", "crate_bonus", "speed_minus"],
+	  "desc": "+15 biscuits when you pick up a barrel; -1% Speed.",
 	  "effects": [
-		{
-		  "stat": "crate_bonus_biscuits",
-		  "add": 15
-		},
-		{
-		  "stat": "speed_pct",
-		  "add": -1
-		}
+		{ "stat": "crate_bonus_biscuits", "add": 15 },
+		{ "stat": "speed_pct", "add": -1 }
 	  ]
 	},
 	{
@@ -222,16 +141,9 @@
 	  "rarity": "common",
 	  "order": 31,
 	  "cost_base": 15,
-	  "tags": [
-		"economy"
-	  ],
+	  "tags": ["economy"],
 	  "desc": "-5% shop prices.",
-	  "effects": [
-		{
-		  "stat": "shop_price_pct",
-		  "add": -5
-		}
-	  ]
+	  "effects": [{ "stat": "shop_price_pct", "add": -5 }]
 	},
 	{
 	  "key": "big_glasses",
@@ -240,16 +152,9 @@
 	  "rarity": "common",
 	  "order": 32,
 	  "cost_base": 20,
-	  "tags": [
-		"range"
-	  ],
+	  "tags": ["range"],
 	  "desc": "+20 Range.",
-	  "effects": [
-		{
-		  "stat": "range",
-		  "add": 20
-		}
-	  ]
+	  "effects": [{ "stat": "range", "add": 20 }]
 	},
 	{
 	  "key": "lucky_charm_bracelet",
@@ -258,25 +163,12 @@
 	  "rarity": "rare",
 	  "order": 33,
 	  "cost_base": 75,
-	  "tags": [
-		"luck",
-		"melee_minus",
-		"ranged_minus"
-	  ],
+	  "tags": ["luck", "melee_minus", "ranged_minus"],
 	  "desc": "+30 Luck; -2 Melee Damage; -1 Ranged Damage.",
 	  "effects": [
-		{
-		  "stat": "luck",
-		  "add": 30
-		},
-		{
-		  "stat": "melee_damage",
-		  "add": -2
-		},
-		{
-		  "stat": "ranged_damage",
-		  "add": -1
-		}
+		{ "stat": "luck", "add": 30 },
+		{ "stat": "melee_damage", "add": -2 },
+		{ "stat": "ranged_damage", "add": -1 }
 	  ]
 	},
 	{
@@ -286,16 +178,9 @@
 	  "rarity": "uncommon",
 	  "order": 34,
 	  "cost_base": 20,
-	  "tags": [
-		"explosion_damage"
-	  ],
+	  "tags": ["explosion_damage"],
 	  "desc": "+15% Explosion Damage.",
-	  "effects": [
-		{
-		  "stat": "explosion_damage_pct",
-		  "add": 15
-		}
-	  ]
+	  "effects": [{ "stat": "explosion_damage_pct", "add": 15 }]
 	},
 	{
 	  "key": "gum_pack",
@@ -304,20 +189,11 @@
 	  "rarity": "uncommon",
 	  "order": 35,
 	  "cost_base": 22,
-	  "tags": [
-		"consumable_heal",
-		"dodge_minus"
-	  ],
-	  "desc": "+2 HP from consumables; -2% Dodge.",
+	  "tags": ["regen", "dodge_minus"],
+	  "desc": "+1 HP regen; -2% Dodge.",
 	  "effects": [
-		{
-		  "stat": "consumable_heal",
-		  "add": 2
-		},
-		{
-		  "stat": "dodge_pct",
-		  "add": -2
-		}
+		{ "stat": "hp_regen", "add": 1 },
+		{ "stat": "dodge_pct", "add": -2 }
 	  ]
 	},
 	{
@@ -327,263 +203,288 @@
 	  "rarity": "rare",
 	  "order": 36,
 	  "cost_base": 85,
-	  "tags": [
-		"damage_ramp",
-		"damage_minus"
-	  ],
+	  "tags": ["damage_ramp", "damage_minus"],
 	  "desc": "+5% Damage every 5s until end of wave; -15% base Damage.",
 	  "effects": [
-		{
-		  "stat": "ramp_damage_pct_per_5s",
-		  "add": 5
-		},
-		{
-		  "stat": "damage_pct",
-		  "add": -15
-		}
+		{ "stat": "ramp_damage_pct_per_5s", "add": 5 },
+		{ "stat": "damage_pct", "add": -15 }
 	  ]
 	}
   ],
-  "weapons": [
-	{
-	  "key": "pencil_darts",
-	  "type": "weapon",
-	  "name": "Pencil Darts",
-	  "rarity": "common",
-	  "order": 110,
-	  "cost_base": 25,
-	  "tags": [
-		"projectile"
-	  ],
-	  "desc": "Fast, low-damage projectiles.",
-	  "weapon": {
-		"archetype": "projectile",
-		"projectiles": 1,
-		"spread_total_deg": 0,
-		"bullet_speed": 820,
-		"damage": 1,
-		"fire_rate": 3.0,
-		"pierce": 0,
-		"aoe_radius": 0.0,
-		"knockback": 0
-	  }
-	},
-	{
-	  "key": "paper_plane",
-	  "type": "weapon",
-	  "name": "Paper Plane",
-	  "rarity": "common",
-	  "order": 111,
-	  "cost_base": 28,
-	  "tags": [
-		"projectile",
-		"pierce"
-	  ],
-	  "desc": "Slow projectile that pierces 1 target.",
-	  "weapon": {
-		"archetype": "projectile",
-		"projectiles": 1,
-		"spread_total_deg": 0,
-		"bullet_speed": 600,
-		"damage": 2,
-		"fire_rate": 1.8,
-		"pierce": 1,
-		"aoe_radius": 0.0,
-		"knockback": 0
-	  }
-	},
-	{
-	  "key": "rubber_band_sling",
-	  "type": "weapon",
-	  "name": "Rubber Band Sling",
-	  "rarity": "common",
-	  "order": 112,
-	  "cost_base": 26,
-	  "tags": [
-		"projectile",
-		"crit"
-	  ],
-	  "desc": "Medium speed, small crit chance.",
-	  "weapon": {
-		"archetype": "projectile",
-		"projectiles": 1,
-		"spread_total_deg": 0,
-		"bullet_speed": 760,
-		"damage": 1,
-		"fire_rate": 2.2,
-		"pierce": 0,
-		"crit_chance_pct": 10,
-		"crit_multiplier": 2.0,
-		"aoe_radius": 0.0,
-		"knockback": 1
-	  }
-	},
-	{
-	  "key": "crayon_blaster",
-	  "type": "weapon",
-	  "name": "Crayon Blaster",
-	  "rarity": "uncommon",
-	  "order": 120,
-	  "cost_base": 45,
-	  "tags": [
-		"spread"
-	  ],
-	  "desc": "Fires 2–3 projectiles in a spread.",
-	  "weapon": {
-		"archetype": "projectile_spread",
-		"projectiles": 3,
-		"spread_total_deg": 18,
-		"bullet_speed": 700,
-		"damage": 1,
-		"fire_rate": 2.2,
-		"pierce": 0,
-		"aoe_radius": 0.0,
-		"knockback": 0
-	  }
-	},
-	{
-	  "key": "soda_pop_rocket",
-	  "type": "weapon",
-	  "name": "Soda Pop Rocket",
-	  "rarity": "uncommon",
-	  "order": 121,
-	  "cost_base": 50,
-	  "tags": [
-		"aoe",
-		"knockback"
-	  ],
-	  "desc": "Arcing projectile with a small splash.",
-	  "weapon": {
-		"archetype": "projectile_arc_explosive",
-		"projectiles": 1,
-		"spread_total_deg": 0,
-		"bullet_speed": 560,
-		"damage": 2,
-		"fire_rate": 1.6,
-		"pierce": 0,
-		"aoe_radius": 40.0,
-		"knockback": 2
-	  }
-	},
-	{
-	  "key": "eraser_boomerang",
-	  "type": "weapon",
-	  "name": "Eraser Boomerang",
-	  "rarity": "uncommon",
-	  "order": 122,
-	  "cost_base": 48,
-	  "tags": [
-		"boomerang"
-	  ],
-	  "desc": "Projectile returns to the player, hitting both ways.",
-	  "weapon": {
-		"archetype": "boomerang",
-		"projectiles": 1,
-		"spread_total_deg": 0,
-		"bullet_speed": 680,
-		"damage": 2,
-		"fire_rate": 1.8,
-		"pierce": 0,
-		"return_after_sec": 0.5,
-		"aoe_radius": 0.0,
-		"knockback": 1
-	  }
-	},
-	{
-	  "key": "cookie_cannon",
-	  "type": "weapon",
-	  "name": "Cookie Cannon",
-	  "rarity": "rare",
-	  "order": 130,
-	  "cost_base": 75,
-	  "tags": [
-		"heavy",
-		"knockback"
-	  ],
-	  "desc": "Slow, heavy cookie shots with big knockback.",
-	  "weapon": {
-		"archetype": "projectile_heavy",
-		"projectiles": 1,
-		"spread_total_deg": 0,
-		"bullet_speed": 540,
-		"damage": 3,
-		"fire_rate": 1.2,
-		"pierce": 0,
-		"aoe_radius": 0.0,
-		"knockback": 3
-	  }
-	},
-	{
-	  "key": "glitter_bomb",
-	  "type": "weapon",
-	  "name": "Glitter Bomb",
-	  "rarity": "rare",
-	  "order": 131,
-	  "cost_base": 78,
-	  "tags": [
-		"aoe",
-		"split"
-	  ],
-	  "desc": "Explodes into mini-projectiles on impact.",
-	  "weapon": {
-		"archetype": "explosive_split",
-		"projectiles": 1,
-		"spread_total_deg": 0,
-		"bullet_speed": 600,
-		"damage": 2,
-		"fire_rate": 1.5,
-		"pierce": 0,
-		"aoe_radius": 48.0,
-		"split_count": 6,
-		"split_damage": 1,
-		"knockback": 1
-	  }
-	},
-	{
-	  "key": "backpack_turret",
-	  "type": "weapon",
-	  "name": "Backpack Turret",
-	  "rarity": "rare",
-	  "order": 132,
-	  "cost_base": 80,
-	  "tags": [
-		"turret",
-		"structure"
-	  ],
-	  "desc": "Spawns a stationary turret every few seconds.",
-	  "weapon": {
-		"archetype": "turret_dropper",
-		"deploy_interval": 8.0,
-		"turret": {
-		  "fire_rate": 2.0,
-		  "damage": 1,
-		  "bullet_speed": 700,
-		  "range": 520
-		}
-	  }
-	},
-	{
-	  "key": "notebook_storm",
-	  "type": "weapon",
-	  "name": "Notebook Storm",
-	  "rarity": "legendary",
-	  "order": 140,
-	  "cost_base": 110,
-	  "tags": [
-		"radial_burst"
-	  ],
-	  "desc": "Fires 6–8 projectiles in a radial burst; biscuit pickups slightly reduce cooldown.",
-	  "weapon": {
-		"archetype": "radial_burst",
-		"projectiles": 8,
-		"spread_total_deg": 360,
-		"bullet_speed": 700,
-		"damage": 1,
-		"fire_rate": 1.6,
-		"pierce": 0,
-		"aoe_radius": 0.0,
-		"on_biscuit_pickup_cooldown_reduction_sec": 0.05
-	  }
+"weapons": [
+  {
+	"key": "pencil_darts",
+	"type": "weapon",
+	"name": "Pencil Darts",
+	"rarity": "common",
+	"order": 110,
+	"cost_base": 25,
+	"tags": ["projectile"],
+	"desc": "Fast, low-damage projectiles.",
+	"weapon": {
+	  "archetype": "projectile",
+	  "projectiles": 1,
+	  "spread_total_deg": 0,
+	  "bullet_speed": 820,
+	  "damage": 1,
+	  "fire_rate": 3.0,
+	  "pierce": 0,
+	  "aoe_radius": 0.0,
+	  "knockback": 0,
+	  "sprite_tex": "res://art/weapons/pencil_darts.png",
+	  "sprite_scale_x": 0.3,
+	  "sprite_scale_y": 0.3,
+	  "bullet_sprite_tex": "res://art/weapons/pencil_darts.png",
+	  "bullet_scale_x": 0.2,
+	  "bullet_scale_y": 0.2
 	}
-  ]
+  },
+  {
+	"key": "paper_plane",
+	"type": "weapon",
+	"name": "Paper Plane",
+	"rarity": "common",
+	"order": 111,
+	"cost_base": 28,
+	"tags": ["projectile", "pierce"],
+	"desc": "Slow projectile that pierces 1 target.",
+	"weapon": {
+	  "archetype": "projectile",
+	  "projectiles": 1,
+	  "spread_total_deg": 0,
+	  "bullet_speed": 600,
+	  "damage": 2,
+	  "fire_rate": 1.8,
+	  "pierce": 1,
+	  "aoe_radius": 0.0,
+	  "knockback": 0,
+	  "sprite_tex": "res://art/weapons/paper_plane.png",
+	  "sprite_scale_x": 0.3,
+	  "sprite_scale_y": 0.3,
+	  "bullet_sprite_tex": "res://art/weapons/paper_plane.png",
+	  "bullet_scale_x": 0.2,
+	  "bullet_scale_y": 0.2
+	}
+  },
+  {
+	"key": "rubber_band_sling",
+	"type": "weapon",
+	"name": "Rubber Band Sling",
+	"rarity": "common",
+	"order": 112,
+	"cost_base": 26,
+	"tags": ["projectile", "crit"],
+	"desc": "Medium speed, small crit chance.",
+	"weapon": {
+	  "archetype": "projectile",
+	  "projectiles": 1,
+	  "spread_total_deg": 0,
+	  "bullet_speed": 760,
+	  "damage": 1,
+	  "fire_rate": 2.2,
+	  "pierce": 0,
+	  "crit_chance_pct": 10,
+	  "crit_multiplier": 2.0,
+	  "aoe_radius": 0.0,
+	  "knockback": 1,
+	  "sprite_tex": "res://art/weapons/rubber_band_sling.png",
+	  "sprite_scale_x": 0.1,
+	  "sprite_scale_y": 0.1,
+	  "bullet_sprite_tex": "res://art/weapons/rubber_band_sling.png",
+	  "bullet_scale_x": 0.1,
+	  "bullet_scale_y": 0.1
+	}
+  },
+  {
+	"key": "crayon_blaster",
+	"type": "weapon",
+	"name": "Crayon Blaster",
+	"rarity": "uncommon",
+	"order": 120,
+	"cost_base": 45,
+	"tags": ["spread"],
+	"desc": "Fires 2–3 projectiles in a spread.",
+	"weapon": {
+	  "archetype": "projectile_spread",
+	  "projectiles": 3,
+	  "spread_total_deg": 18,
+	  "bullet_speed": 700,
+	  "damage": 1,
+	  "fire_rate": 2.2,
+	  "pierce": 0,
+	  "aoe_radius": 0.0,
+	  "knockback": 0,
+	  "sprite_tex": "res://art/weapons/crayon_blaster.png",
+	  "sprite_scale_x": 0.1,
+	  "sprite_scale_y": 0.1,
+	  "bullet_sprite_tex": "res://art/weapons/crayon_blaster.png",
+	  "bullet_scale_x": 0.1,
+	  "bullet_scale_y": 0.1
+	}
+  },
+  {
+	"key": "soda_pop_rocket",
+	"type": "weapon",
+	"name": "Soda Pop Rocket",
+	"rarity": "uncommon",
+	"order": 121,
+	"cost_base": 50,
+	"tags": ["aoe", "knockback"],
+	"desc": "Arcing projectile with a small splash.",
+	"weapon": {
+	  "archetype": "projectile_arc_explosive",
+	  "projectiles": 1,
+	  "spread_total_deg": 0,
+	  "bullet_speed": 560,
+	  "damage": 2,
+	  "fire_rate": 1.6,
+	  "pierce": 0,
+	  "aoe_radius": 40.0,
+	  "knockback": 2,
+	  "sprite_tex": "res://art/weapons/soda_pop_rocket.png",
+	  "sprite_scale_x": 0.1,
+	  "sprite_scale_y": 0.1,
+	  "bullet_sprite_tex": "res://art/weapons/soda_pop_rocket.png",
+	  "bullet_scale_x": 0.1,
+	  "bullet_scale_y": 0.1
+	}
+  },
+  {
+	"key": "eraser_boomerang",
+	"type": "weapon",
+	"name": "Eraser Boomerang",
+	"rarity": "uncommon",
+	"order": 122,
+	"cost_base": 48,
+	"tags": ["boomerang"],
+	"desc": "Projectile returns to the player, hitting both ways.",
+	"weapon": {
+	  "archetype": "boomerang",
+	  "projectiles": 1,
+	  "spread_total_deg": 0,
+	  "bullet_speed": 680,
+	  "damage": 2,
+	  "fire_rate": 1.8,
+	  "pierce": 0,
+	  "return_after_sec": 0.5,
+	  "aoe_radius": 0.0,
+	  "knockback": 1,
+	  "sprite_tex": "res://art/weapons/eraser_boomerang.png",
+	  "sprite_scale_x": 0.1,
+	  "sprite_scale_y": 0.1,
+	  "bullet_sprite_tex": "res://art/weapons/eraser_boomerang.png",
+	  "bullet_scale_x": 0.1,
+	  "bullet_scale_y": 0.1
+	}
+  },
+  {
+	"key": "cookie_cannon",
+	"type": "weapon",
+	"name": "Cookie Cannon",
+	"rarity": "rare",
+	"order": 130,
+	"cost_base": 75,
+	"tags": ["heavy", "knockback"],
+	"desc": "Slow, heavy cookie shots with big knockback.",
+	"weapon": {
+	  "archetype": "projectile_heavy",
+	  "projectiles": 1,
+	  "spread_total_deg": 0,
+	  "bullet_speed": 540,
+	  "damage": 3,
+	  "fire_rate": 1.2,
+	  "pierce": 0,
+	  "aoe_radius": 0.0,
+	  "knockback": 3,
+	  "sprite_tex": "res://art/weapons/cookie_cannon.png",
+	  "sprite_scale_x": 0.1,
+	  "sprite_scale_y": 0.1,
+	  "bullet_sprite_tex": "res://art/weapons/cookie_cannon.png",
+	  "bullet_scale_x": 0.1,
+	  "bullet_scale_y": 0.1
+	}
+  },
+  {
+	"key": "glitter_bomb",
+	"type": "weapon",
+	"name": "Glitter Bomb",
+	"rarity": "rare",
+	"order": 131,
+	"cost_base": 78,
+	"tags": ["aoe", "split"],
+	"desc": "Explodes into mini-projectiles on impact.",
+	"weapon": {
+	  "archetype": "explosive_split",
+	  "projectiles": 1,
+	  "spread_total_deg": 0,
+	  "bullet_speed": 600,
+	  "damage": 2,
+	  "fire_rate": 1.5,
+	  "pierce": 0,
+	  "aoe_radius": 48.0,
+	  "split_count": 6,
+	  "split_damage": 1,
+	  "knockback": 1,
+	  "sprite_tex": "res://art/weapons/glitter_bomb.png",
+	  "sprite_scale_x": 0.1,
+	  "sprite_scale_y": 0.1,
+	  "bullet_sprite_tex": "res://art/weapons/glitter_bomb.png",
+	  "bullet_scale_x": 0.1,
+	  "bullet_scale_y": 0.1
+	}
+  },
+  {
+	"key": "backpack_turret",
+	"type": "weapon",
+	"name": "Backpack Turret",
+	"rarity": "rare",
+	"order": 132,
+	"cost_base": 80,
+	"tags": ["turret", "structure"],
+	"desc": "Spawns a stationary turret every few seconds.",
+	"weapon": {
+	  "archetype": "turret_dropper",
+	  "deploy_interval": 8.0,
+	  "turret": {
+		"fire_rate": 2.0,
+		"damage": 1,
+		"bullet_speed": 700,
+		"range": 520
+	  },
+	  "sprite_tex": "res://art/weapons/backpack_turret.png",
+	  "sprite_scale_x": 0.1,
+	  "sprite_scale_y": 0.1,
+	  "bullet_sprite_tex": "res://art/weapons/backpack_turret.png",
+	  "bullet_scale_x": 0.1,
+	  "bullet_scale_y": 0.1
+	}
+  },
+  {
+	"key": "notebook_storm",
+	"type": "weapon",
+	"name": "Notebook Storm",
+	"rarity": "legendary",
+	"order": 140,
+	"cost_base": 110,
+	"tags": ["radial_burst"],
+	"desc": "Fires 6–8 projectiles in a radial burst; biscuit pickups slightly reduce cooldown.",
+	"weapon": {
+	  "archetype": "radial_burst",
+	  "projectiles": 8,
+	  "spread_total_deg": 360,
+	  "bullet_speed": 700,
+	  "damage": 1,
+	  "fire_rate": 1.6,
+	  "pierce": 0,
+	  "aoe_radius": 0.0,
+	  "on_biscuit_pickup_cooldown_reduction_sec": 0.05,
+	  "sprite_tex": "res://art/weapons/notebook_storm.png",
+	  "sprite_scale_x": 0.3,
+	  "sprite_scale_y": 0.3,
+	  "bullet_sprite_tex": "res://art/weapons/notebook_storm.png",
+	  "bullet_scale_x": 0.3,
+	  "bullet_scale_y": 0.3
+	}
+  }
+]
 }

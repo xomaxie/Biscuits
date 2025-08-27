@@ -1,7 +1,8 @@
-[gd_scene load_steps=7 format=3 uid="uid://cuevpdscc6iv"]
+[gd_scene load_steps=8 format=3 uid="uid://cuevpdscc6iv"]
 
 [ext_resource type="Script" uid="uid://qii7i7mrek5r" path="res://Credits.gd" id="1_n222b"]
 [ext_resource type="FontFile" uid="uid://vo8pyg6fnfud" path="res://fonts/superstarorig_memesbruh03.ttf" id="2_o7h06"]
+[ext_resource type="FontFile" uid="uid://eanfqlyf8kgt" path="res://fonts/Roboto-Bold.ttf" id="3_o7h06"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2"]
 resource_name = "red_button_hover"
@@ -99,7 +100,7 @@ vertical_alignment = 1
 
 [node name="RichTextLabel" type="RichTextLabel" parent="UI/MainContainer/MenuButtons"]
 layout_mode = 2
-theme_override_fonts/normal_font = ExtResource("2_o7h06")
+theme_override_fonts/normal_font = ExtResource("3_o7h06")
 theme_override_font_sizes/normal_font_size = 25
 bbcode_enabled = true
 text = "[center]───────────────

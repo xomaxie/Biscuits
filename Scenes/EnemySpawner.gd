@@ -15,12 +15,18 @@ var _enabled: bool = false
 var _timer: float = 0.0
 var _nexus: Node2D = null
 var _container: Node = null
+var _gs: Node = null
 
 # -----------------------------------------------------------------------------
 # Lifecycle
 # -----------------------------------------------------------------------------
 func _ready() -> void:
 	randomize()
+	_gs = get_node_or_null("/root/GameState")
+	if _gs:
+		_gs.phase_changed.connect(_on_phase_changed)
+		_gs.wave_changed.connect(_on_wave_changed)
+		_on_phase_changed(int(_gs.phase))
 
 # -----------------------------------------------------------------------------
 # Configuration
@@ -37,6 +43,25 @@ func set_spawn_interval(seconds: float) -> void:
 	spawn_interval = max(0.05, seconds)
 
 # -----------------------------------------------------------------------------
+# Signals from GameState
+# -----------------------------------------------------------------------------
+func _on_phase_changed(new_phase: int) -> void:
+	if _gs == null:
+		return
+	if new_phase == _gs.Phase.WAVE:
+		set_enabled(true)
+	else:
+		set_enabled(false)
+
+func _on_wave_changed(new_wave: int) -> void:
+	var waves: int = max(0, new_wave - 1)
+	var mult: float = pow(0.97, float(waves))
+	var base: float = spawn_interval * mult
+	if base < 0.2:
+		base = 0.2
+	set_spawn_interval(base)
+
+# -----------------------------------------------------------------------------
 # Physics
 # -----------------------------------------------------------------------------
 func _physics_process(delta: float) -> void:
@@ -44,7 +69,7 @@ func _physics_process(delta: float) -> void:
 		return
 	if enemy_scene == null or _nexus == null or _container == null:
 		return
-	if _container.get_child_count() >= max_enemies:
+	if _enemy_count_in_container() >= max_enemies:
 		return
 
 	_timer -= delta
@@ -64,13 +89,25 @@ func _spawn_one() -> void:
 	var pos: Vector2 = Vector2.ZERO
 	match side:
 		0:
-			pos = Vector2(randf_range(rect.position.x, rect.position.x + rect.size.x), rect.position.y - spawn_margin)
+			pos = Vector2(
+				randf_range(rect.position.x, rect.position.x + rect.size.x),
+				rect.position.y - spawn_margin
+			)
 		1:
-			pos = Vector2(rect.position.x + rect.size.x + spawn_margin, randf_range(rect.position.y, rect.position.y + rect.size.y))
+			pos = Vector2(
+				rect.position.x + rect.size.x + spawn_margin,
+				randf_range(rect.position.y, rect.position.y + rect.size.y)
+			)
 		2:
-			pos = Vector2(randf_range(rect.position.x, rect.position.x + rect.size.x), rect.position.y + rect.size.y + spawn_margin)
+			pos = Vector2(
+				randf_range(rect.position.x, rect.position.x + rect.size.x),
+				rect.position.y + rect.size.y + spawn_margin
+			)
 		3:
-			pos = Vector2(rect.position.x - spawn_margin, randf_range(rect.position.y, rect.position.y + rect.size.y))
+			pos = Vector2(
+				rect.position.x - spawn_margin,
+				randf_range(rect.position.y, rect.position.y + rect.size.y)
+			)
 
 	var e: Node = enemy_scene.instantiate()
 	if e == null:
@@ -92,6 +129,15 @@ func _spawn_one() -> void:
 # -----------------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------------
+func _enemy_count_in_container() -> int:
+	if _container == null:
+		return 0
+	var n: int = 0
+	for c in _container.get_children():
+		if c is Node and (c as Node).is_in_group("enemies"):
+			n += 1
+	return n
+
 func _get_world_visible_rect() -> Rect2:
 	var cam: Camera2D = get_viewport().get_camera_2d()
 	if cam != null:
@@ -104,7 +150,8 @@ func _get_world_visible_rect() -> Rect2:
 
 func _has_property(obj: Object, prop: String) -> bool:
 	var plist: Array = obj.get_property_list()
-	for p in plist:
-		if p is Dictionary and p.has("name") and String(p["name"]) == prop:
+	for p_v in plist:
+		var p: Dictionary = p_v
+		if p.has("name") and String(p["name"]) == prop:
 			return true
 	return false
