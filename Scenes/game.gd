@@ -23,7 +23,17 @@ extends Node2D
 # Tunables
 # -----------------------------------------------------------------------------
 @export var prep_duration: float = 5.0
-@export var wave_duration: float = 25.0
+
+# Dynamic wave durations:
+# Waves 1..early_wave_count -> early_wave_duration
+# Waves >early_wave_count   -> late_wave_duration
+@export var early_wave_count: int = 10
+@export var early_wave_duration: float = 45.0
+@export var late_wave_duration: float = 60.0
+
+# (Legacy/fallback) If you want a single fixed duration, set both durations
+# equal; the old wave_duration is kept for compatibility but not used directly.
+@export var wave_duration: float = 90.0
 
 # Heal nexus during wave: +X% max HP per biscuit gained
 @export var nexus_heal_per_biscuit_pct: float = 1.0
@@ -109,13 +119,16 @@ func _enter_prep() -> void:
 
 func _start_wave() -> void:
 	GameState.set_phase(GameState.Phase.WAVE)
+	# Optional spawn pacing (kept from your current logic)
 	var s: float = clampf(1.2 - float(GameState.wave - 1) * 0.07, 0.35, 1.2)
 	if spawner.has_method("set_spawn_interval"):
 		spawner.set_spawn_interval(s)
 	_set_spawning(true)
 	if barrel_spawner and barrel_spawner.has_method("on_wave_started"):
 		barrel_spawner.on_wave_started(GameState.wave)
-	wave_timer.start(wave_duration)
+	# Start with dynamic duration
+	var dur := _get_wave_duration(GameState.wave)
+	wave_timer.start(dur)
 
 func _enter_shop() -> void:
 	_set_spawning(false)
@@ -143,6 +156,15 @@ func _on_shop_continue() -> void:
 func _set_spawning(enabled: bool) -> void:
 	if spawner.has_method("set_enabled"):
 		spawner.set_enabled(enabled)
+
+# -----------------------------------------------------------------------------
+# Dynamic duration helper
+# -----------------------------------------------------------------------------
+func _get_wave_duration(w:int) -> float:
+	# Waves 1..early_wave_count use early duration; later waves use late
+	if w <= early_wave_count:
+		return early_wave_duration
+	return late_wave_duration
 
 # -----------------------------------------------------------------------------
 # Field clearing

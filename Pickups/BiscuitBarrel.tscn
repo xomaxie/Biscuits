@@ -16,8 +16,10 @@ region = Rect2(4, 71, 59, 57)
 collision_layer = 8
 collision_mask = 8
 script = ExtResource("1_hpg2l")
+max_hp = 2
 pickup_scene = ExtResource("2_gmglh")
 scatter_radius = 100.0
+wave_max = 20
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, 8)

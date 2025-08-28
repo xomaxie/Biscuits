@@ -23,10 +23,10 @@
 	  "order": 11,
 	  "cost_base": 45,
 	  "tags": ["lifesteal", "regen", "economy_minus"],
-	  "desc": "+2% Lifesteal; +2 HP Regeneration; -3 Harvesting.",
+	  "desc": "+0.25% Lifesteal; +0.25 HP Regeneration; -3 Harvesting.",
 	  "effects": [
-		{ "stat": "lifesteal_pct", "add": 2 },
-		{ "stat": "hp_regen", "add": 1 },
+		{ "stat": "lifesteal_pct", "add": 0.25 },
+		{ "stat": "hp_regen", "add": 0.25 },
 		{ "stat": "harvesting", "add": -3 }
 	  ]
 	},
@@ -128,9 +128,9 @@
 	  "order": 30,
 	  "cost_base": 15,
 	  "tags": ["economy", "crate_bonus", "speed_minus"],
-	  "desc": "+15 biscuits when you pick up a barrel; -1% Speed.",
+	  "desc": "+2 biscuits when you pick up a barrel; -1% Speed.",
 	  "effects": [
-		{ "stat": "crate_bonus_biscuits", "add": 15 },
+		{ "stat": "crate_bonus_biscuits", "add": 2 },
 		{ "stat": "speed_pct", "add": -1 }
 	  ]
 	},
@@ -190,9 +190,9 @@
 	  "order": 35,
 	  "cost_base": 22,
 	  "tags": ["regen", "dodge_minus"],
-	  "desc": "+1 HP regen; -2% Dodge.",
+	  "desc": "+0.5 HP regen; -2% Dodge.",
 	  "effects": [
-		{ "stat": "hp_regen", "add": 1 },
+		{ "stat": "hp_regen", "add": 0.5 },
 		{ "stat": "dodge_pct", "add": -2 }
 	  ]
 	},
@@ -315,11 +315,11 @@
 	  "aoe_radius": 0.0,
 	  "knockback": 0,
 	  "sprite_tex": "res://art/weapons/crayon_blaster.png",
-	  "sprite_scale_x": 0.1,
-	  "sprite_scale_y": 0.1,
-	  "bullet_sprite_tex": "res://art/weapons/crayon_blaster.png",
-	  "bullet_scale_x": 0.1,
-	  "bullet_scale_y": 0.1
+	  "sprite_scale_x": 0.3,
+	  "sprite_scale_y": 0.3,
+	  "bullet_sprite_tex": "res://art/weapons/crayon_blaster_projectile.png",
+	  "bullet_scale_x": 0.2,
+	  "bullet_scale_y": 0.2
 	}
   },
   {
@@ -397,11 +397,11 @@
 	  "aoe_radius": 0.0,
 	  "knockback": 3,
 	  "sprite_tex": "res://art/weapons/cookie_cannon.png",
-	  "sprite_scale_x": 0.1,
-	  "sprite_scale_y": 0.1,
-	  "bullet_sprite_tex": "res://art/weapons/cookie_cannon.png",
-	  "bullet_scale_x": 0.1,
-	  "bullet_scale_y": 0.1
+	  "sprite_scale_x": 0.3,
+	  "sprite_scale_y": 0.3,
+	  "bullet_sprite_tex": "res://art/weapons/cookie_cannon_projectile.png",
+	  "bullet_scale_x": 0.2,
+	  "bullet_scale_y": 0.2
 	}
   },
   {
@@ -459,32 +459,33 @@
 	  "bullet_scale_y": 0.1
 	}
   },
-  {
-	"key": "notebook_storm",
-	"type": "weapon",
-	"name": "Notebook Storm",
-	"rarity": "legendary",
-	"order": 140,
-	"cost_base": 110,
-	"tags": ["radial_burst"],
-	"desc": "Fires 6–8 projectiles in a radial burst; biscuit pickups slightly reduce cooldown.",
-	"weapon": {
-	  "archetype": "radial_burst",
-	  "projectiles": 8,
-	  "spread_total_deg": 360,
-	  "bullet_speed": 700,
-	  "damage": 1,
-	  "fire_rate": 1.6,
-	  "pierce": 0,
-	  "aoe_radius": 0.0,
-	  "on_biscuit_pickup_cooldown_reduction_sec": 0.05,
-	  "sprite_tex": "res://art/weapons/notebook_storm.png",
-	  "sprite_scale_x": 0.3,
-	  "sprite_scale_y": 0.3,
-	  "bullet_sprite_tex": "res://art/weapons/notebook_storm.png",
-	  "bullet_scale_x": 0.3,
-	  "bullet_scale_y": 0.3
-	}
+{
+  "key": "notebook_storm",
+  "type": "weapon",
+  "name": "Notebook Storm",
+  "rarity": "legendary",
+  "order": 140,
+  "cost_base": 110,
+  "tags": ["shotgun", "spread", "knockback"],
+  "desc": "Hurls a storm of notebooks in a tight cone. Devastating up close.",
+  "weapon": {
+	"archetype": "projectile_spread",
+	"projectiles": 12,
+	"spread_total_deg": 34,
+	"bullet_speed": 880,
+	"damage": 2,
+	"fire_rate": 0.9,
+	"pierce": 0,
+	"aoe_radius": 0.0,
+	"knockback": 2,
+	"muzzle_forward": 16.0,
+	"sprite_tex": "res://art/weapons/notebook_storm.png",
+	"sprite_scale_x": 0.35,
+	"sprite_scale_y": 0.35,
+	"bullet_sprite_tex": "res://art/weapons/notebook_storm.png",
+	"bullet_scale_x": 0.28,
+	"bullet_scale_y": 0.28
   }
+}
 ]
 }

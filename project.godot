@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 GameState="*res://autoload/GameState.gd"
 UpgradeDB="*res://data/upgrade_db.gd"
 WeaponFactory="*res://weapons/WeaponFactory.gd"
+EnemyDB="*res://autoload/EnemyDB.gd"
 
 [editor]
 

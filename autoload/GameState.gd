@@ -21,6 +21,11 @@ enum Phase { PREP, WAVE, GAME_OVER }
 # -----------------------------------------------------------------------------
 @export var starting_biscuits:int = 0
 
+# Wave scaling for enemies
+@export var enemy_hp_per_wave_pct: float = 0.15
+@export var enemy_dmg_per_wave_pct: float = 0.20
+@export var enemy_speed_per_wave_pct: float = 0.02
+
 # -----------------------------------------------------------------------------
 # Runtime state
 # -----------------------------------------------------------------------------
@@ -40,7 +45,7 @@ const DEBUG_SPEED := false
 # Stat base and mappings
 # -----------------------------------------------------------------------------
 const STAT_BASE := {
-	"move_speed": 230.0,
+	"move_speed": 300.0,
 	"damage_mult": 1.0,
 	"fire_rate_mult": 1.0,
 	"range_add": 0.0,
@@ -57,6 +62,8 @@ const STAT_BASE := {
 	"crate_bonus_biscuits": 0.0,
 	"shop_price_mult": 1.0,
 	"enemy_hp_mult": 1.0,
+	"enemy_damage_mult": 1.0,
+	"enemy_speed_mult": 1.0,
 	"explosion_damage_mult": 1.0,
 	"pierce_add": 0.0,
 	"knockback_add": 0.0,
@@ -191,64 +198,143 @@ func buy_entry(key: String, current_level: int = 0) -> bool:
 # -----------------------------------------------------------------------------
 # Stat computation
 # -----------------------------------------------------------------------------
-func _apply_effect(effect:Dictionary, add_accum:Dictionary, mul_accum:Dictionary) -> void:
+func _apply_effect(
+	effect:Dictionary,
+	add_accum:Dictionary,
+	mul_accum:Dictionary
+) -> void:
 	var stat:String = String(effect.get("stat", ""))
 
 	if stat == "attack_speed_pct":
 		var addp := float(effect.get("add", 0.0))
-		mul_accum["fire_rate_mult"] = float(mul_accum.get("fire_rate_mult", 1.0)) * (1.0 + addp / 100.0)
-		add_accum["attack_speed_pct"] = float(add_accum.get("attack_speed_pct", 0.0)) + addp
+		var cur := float(mul_accum.get("fire_rate_mult", 1.0))
+		mul_accum["fire_rate_mult"] = cur * (1.0 + addp / 100.0)
+		var curp := float(add_accum.get("attack_speed_pct", 0.0))
+		add_accum["attack_speed_pct"] = curp + addp
 
 	elif stat == "attack_speed_while_still_pct":
 		var add_still := float(effect.get("add", 0.0))
-		add_accum["attack_speed_while_still_pct"] = float(add_accum.get("attack_speed_while_still_pct", 0.0)) + add_still
+		var cur_s := float(
+			add_accum.get("attack_speed_while_still_pct", 0.0)
+		)
+		add_accum["attack_speed_while_still_pct"] = cur_s + add_still
 
 	elif stat == "speed_pct":
 		var add_speed := float(effect.get("add", 0.0))
-		add_accum["speed_pct_sum"] = float(add_accum.get("speed_pct_sum", 0.0)) + add_speed
+		var cur_sp := float(add_accum.get("speed_pct_sum", 0.0))
+		add_accum["speed_pct_sum"] = cur_sp + add_speed
 
 	elif stat == "damage_pct":
-		mul_accum["damage_mult"] = float(mul_accum.get("damage_mult", 1.0)) * (1.0 + float(effect.get("add", 0.0)) / 100.0)
+		var curd := float(mul_accum.get("damage_mult", 1.0))
+		mul_accum["damage_mult"] = curd * (1.0 + float(
+			effect.get("add", 0.0)
+		) / 100.0)
 
 	elif stat == "shop_price_pct":
-		mul_accum["shop_price_mult"] = float(mul_accum.get("shop_price_mult", 1.0)) * (1.0 + float(effect.get("add", 0.0)) / 100.0)
+		var spm := float(mul_accum.get("shop_price_mult", 1.0))
+		mul_accum["shop_price_mult"] = spm * (1.0 + float(
+			effect.get("add", 0.0)
+		) / 100.0)
 
 	elif stat == "enemy_hp_pct":
-		mul_accum["enemy_hp_mult"] = float(mul_accum.get("enemy_hp_mult", 1.0)) * (1.0 + float(effect.get("add", 0.0)) / 100.0)
+		var eh := float(mul_accum.get("enemy_hp_mult", 1.0))
+		mul_accum["enemy_hp_mult"] = eh * (1.0 + float(
+			effect.get("add", 0.0)
+		) / 100.0)
+
+	elif stat == "enemy_damage_pct":
+		var ed := float(mul_accum.get("enemy_damage_mult", 1.0))
+		mul_accum["enemy_damage_mult"] = ed * (1.0 + float(
+			effect.get("add", 0.0)
+		) / 100.0)
+
+	elif stat == "enemy_speed_pct":
+		var es := float(mul_accum.get("enemy_speed_mult", 1.0))
+		mul_accum["enemy_speed_mult"] = es * (1.0 + float(
+			effect.get("add", 0.0)
+		) / 100.0)
 
 	elif stat == "explosion_damage_pct":
-		mul_accum["explosion_damage_mult"] = float(mul_accum.get("explosion_damage_mult", 1.0)) * (1.0 + float(effect.get("add", 0.0)) / 100.0)
+		var exd := float(mul_accum.get("explosion_damage_mult", 1.0))
+		mul_accum["explosion_damage_mult"] = exd * (1.0 + float(
+			effect.get("add", 0.0)
+		) / 100.0)
 
 	elif stat == "range":
-		add_accum["range_add"] = float(add_accum.get("range_add", 0.0)) + float(effect.get("add", 0.0))
+		add_accum["range_add"] = float(
+			add_accum.get("range_add", 0.0)
+		) + float(effect.get("add", 0.0))
+
 	elif stat == "pickup_radius_add":
-		add_accum["pickup_radius_add"] = float(add_accum.get("pickup_radius_add", 0.0)) + float(effect.get("add", 0.0))
+		add_accum["pickup_radius_add"] = float(
+			add_accum.get("pickup_radius_add", 0.0)
+		) + float(effect.get("add", 0.0))
+
 	elif stat == "projectiles_add":
-		add_accum["projectiles_add"] = float(add_accum.get("projectiles_add", 0.0)) + float(effect.get("add", 0.0))
+		add_accum["projectiles_add"] = float(
+			add_accum.get("projectiles_add", 0.0)
+		) + float(effect.get("add", 0.0))
+
 	elif stat == "spread_deg_add":
-		add_accum["spread_deg_add"] = float(add_accum.get("spread_deg_add", 0.0)) + float(effect.get("add", 0.0))
+		add_accum["spread_deg_add"] = float(
+			add_accum.get("spread_deg_add", 0.0)
+		) + float(effect.get("add", 0.0))
+
 	elif stat == "max_hp":
-		add_accum["max_hp"] = float(add_accum.get("max_hp", 0.0)) + float(effect.get("add", 0.0))
+		add_accum["max_hp"] = float(
+			add_accum.get("max_hp", 0.0)
+		) + float(effect.get("add", 0.0))
+
 	elif stat == "hp_regen":
-		add_accum["hp_regen"] = float(add_accum.get("hp_regen", 0.0)) + float(effect.get("add", 0.0))
+		add_accum["hp_regen"] = float(
+			add_accum.get("hp_regen", 0.0)
+		) + float(effect.get("add", 0.0))
+
 	elif stat == "lifesteal_pct":
-		add_accum["lifesteal_pct"] = float(add_accum.get("lifesteal_pct", 0.0)) + float(effect.get("add", 0.0))
+		add_accum["lifesteal_pct"] = float(
+			add_accum.get("lifesteal_pct", 0.0)
+		) + float(effect.get("add", 0.0))
+
 	elif stat == "armor":
-		add_accum["armor"] = float(add_accum.get("armor", 0.0)) + float(effect.get("add", 0.0))
+		add_accum["armor"] = float(
+			add_accum.get("armor", 0.0)
+		) + float(effect.get("add", 0.0))
+
 	elif stat == "dodge_pct":
-		add_accum["dodge_pct"] = float(add_accum.get("dodge_pct", 0.0)) + float(effect.get("add", 0.0))
+		add_accum["dodge_pct"] = float(
+			add_accum.get("dodge_pct", 0.0)
+		) + float(effect.get("add", 0.0))
+
 	elif stat == "luck":
-		add_accum["luck"] = float(add_accum.get("luck", 0.0)) + float(effect.get("add", 0.0))
+		add_accum["luck"] = float(
+			add_accum.get("luck", 0.0)
+		) + float(effect.get("add", 0.0))
+
 	elif stat == "harvesting":
-		add_accum["harvesting"] = float(add_accum.get("harvesting", 0.0)) + float(effect.get("add", 0.0))
+		add_accum["harvesting"] = float(
+			add_accum.get("harvesting", 0.0)
+		) + float(effect.get("add", 0.0))
+
 	elif stat == "crate_bonus_biscuits":
-		add_accum["crate_bonus_biscuits"] = float(add_accum.get("crate_bonus_biscuits", 0.0)) + float(effect.get("add", 0.0))
+		add_accum["crate_bonus_biscuits"] = float(
+			add_accum.get("crate_bonus_biscuits", 0.0)
+		) + float(effect.get("add", 0.0))
+
 	elif stat == "projectile_pierce":
-		add_accum["pierce_add"] = float(add_accum.get("pierce_add", 0.0)) + float(effect.get("add", 0.0))
+		add_accum["pierce_add"] = float(
+			add_accum.get("pierce_add", 0.0)
+		) + float(effect.get("add", 0.0))
+
 	elif stat == "knockback":
-		add_accum["knockback_add"] = float(add_accum.get("knockback_add", 0.0)) + float(effect.get("add", 0.0))
+		add_accum["knockback_add"] = float(
+			add_accum.get("knockback_add", 0.0)
+		) + float(effect.get("add", 0.0))
+
 	elif stat == "ramp_damage_pct_per_5s":
-		add_accum["ramp_damage_pct_per_5s"] = float(add_accum.get("ramp_damage_pct_per_5s", 0.0)) + float(effect.get("add", 0.0))
+		add_accum["ramp_damage_pct_per_5s"] = float(
+			add_accum.get("ramp_damage_pct_per_5s", 0.0)
+		) + float(effect.get("add", 0.0))
+
 	else:
 		pass
 
@@ -276,18 +362,15 @@ func _recompute_cache() -> void:
 					continue
 				_apply_effect(fx_v, add_accum, mul_accum)
 
-	# Additive stats (except speed_pct_sum which is handled below)
 	for a_key in add_accum.keys():
 		if a_key == "speed_pct_sum":
 			continue
 		var base_val:float = float(_cached_stats.get(a_key, 0.0))
 		_cached_stats[a_key] = base_val + float(add_accum[a_key])
 
-	# Linearly stacked speed pct stored separately; do NOT bake into move_speed
 	var speed_pct_sum: float = float(add_accum.get("speed_pct_sum", 0.0))
 	_cached_stats["speed_pct"] = speed_pct_sum
 
-	# Multiplicatives
 	for m_key in mul_accum.keys():
 		var base2:float = float(_cached_stats.get(m_key, 1.0))
 		_cached_stats[m_key] = base2 * float(mul_accum[m_key])
@@ -295,7 +378,8 @@ func _recompute_cache() -> void:
 	if DEBUG_SPEED:
 		var base_ms := float(STAT_BASE["move_speed"])
 		var eff_ms := base_ms * (1.0 + speed_pct_sum / 100.0)
-		print("[GS] Recompute: speed_pct=", speed_pct_sum, "% base=", base_ms, " effective=", eff_ms)
+		print("[GS] Recompute: speed_pct=", speed_pct_sum,
+			"% base=", base_ms, " effective=", eff_ms)
 
 # -----------------------------------------------------------------------------
 # Public stat API
@@ -306,7 +390,6 @@ func _compute_internal_stat(stat_name:String) -> float:
 	return 0.0
 
 func get_stat(stat_name:String) -> float:
-	# Special-case movespeed so it always reflects current speed_pct
 	if stat_name == "movespeed":
 		var base_ms := _compute_internal_stat("move_speed")
 		var pct := _compute_internal_stat("speed_pct")
@@ -326,42 +409,80 @@ func get_stat(stat_name:String) -> float:
 
 func get_all_stats() -> Dictionary:
 	return {
-		"movespeed":   get_stat("movespeed"),
-		"damage":      get_stat("damage"),
-		"firerate":    get_stat("firerate"),
-		"range":       get_stat("range"),
-		"pickup":      get_stat("pickup"),
+		"movespeed": get_stat("movespeed"),
+		"damage": get_stat("damage"),
+		"firerate": get_stat("firerate"),
+		"range": get_stat("range"),
+		"pickup": get_stat("pickup"),
 		"projectiles": int(round(get_stat("projectiles"))),
-		"spread":      get_stat("spread"),
-		"max_hp":      _compute_internal_stat("max_hp"),
-		"hp_regen":    _compute_internal_stat("hp_regen"),
-		"lifesteal":   _compute_internal_stat("lifesteal_pct"),
-		"armor":       _compute_internal_stat("armor"),
-		"dodge":       _compute_internal_stat("dodge_pct"),
-		"luck":        _compute_internal_stat("luck"),
-		"attack_speed_pct": _compute_internal_stat("attack_speed_pct"),
-		"attack_speed_while_still_pct": _compute_internal_stat("attack_speed_while_still_pct"),
+		"spread": get_stat("spread"),
+		"max_hp": _compute_internal_stat("max_hp"),
+		"hp_regen": _compute_internal_stat("hp_regen"),
+		"lifesteal": _compute_internal_stat("lifesteal_pct"),
+		"armor": _compute_internal_stat("armor"),
+		"dodge": _compute_internal_stat("dodge_pct"),
+		"luck": _compute_internal_stat("luck"),
+		"attack_speed_pct":
+			_compute_internal_stat("attack_speed_pct"),
+		"attack_speed_while_still_pct":
+			_compute_internal_stat("attack_speed_while_still_pct"),
 		"speed_pct": _compute_internal_stat("speed_pct")
 	}
 
 # -----------------------------------------------------------------------------
 # Helpers for other systems
 # -----------------------------------------------------------------------------
-func get_shop_price_mult() -> float:        return _compute_internal_stat("shop_price_mult")
-func get_enemy_hp_mult() -> float:          return _compute_internal_stat("enemy_hp_mult")
-func get_explosion_damage_mult() -> float:  return _compute_internal_stat("explosion_damage_mult")
-func get_pierce_add() -> int:               return int(round(_compute_internal_stat("pierce_add")))
-func get_knockback_add() -> float:          return _compute_internal_stat("knockback_add")
-func get_ramp_damage_pct_per_5s() -> float: return _compute_internal_stat("ramp_damage_pct_per_5s")
-func get_crate_bonus_biscuits() -> int:     return int(round(_compute_internal_stat("crate_bonus_biscuits")))
-func get_lifesteal_pct() -> float:          return _compute_internal_stat("lifesteal_pct")
+func get_shop_price_mult() -> float:
+	return _compute_internal_stat("shop_price_mult")
 
-func get_effective_weapon_values(base_fire_rate:float, base_range:float, base_damage:int, base_projectiles:int, base_spread:float) -> Dictionary:
-	var fire_rate_mult:float   = get_stat("fire_rate_mult")
-	var range_add:float        = get_stat("range_add")
-	var damage_mult:float      = get_stat("damage_mult")
-	var proj_add:int           = int(round(get_stat("projectiles_add")))
-	var spread_add:float       = get_stat("spread_deg_add")
+func _waves_since_start() -> int:
+	return max(0, wave - 1)
+
+func get_enemy_hp_mult() -> float:
+	var base := _compute_internal_stat("enemy_hp_mult")
+	var wave_mult := pow(1.0 + enemy_hp_per_wave_pct, _waves_since_start())
+	return base * wave_mult
+
+func get_enemy_damage_mult() -> float:
+	var base := _compute_internal_stat("enemy_damage_mult")
+	var wave_mult := pow(1.0 + enemy_dmg_per_wave_pct, _waves_since_start())
+	return base * wave_mult
+
+func get_enemy_speed_mult() -> float:
+	var base := _compute_internal_stat("enemy_speed_mult")
+	var wave_mult := pow(1.0 + enemy_speed_per_wave_pct, _waves_since_start())
+	return base * wave_mult
+
+func get_explosion_damage_mult() -> float:
+	return _compute_internal_stat("explosion_damage_mult")
+
+func get_pierce_add() -> int:
+	return int(round(_compute_internal_stat("pierce_add")))
+
+func get_knockback_add() -> float:
+	return _compute_internal_stat("knockback_add")
+
+func get_ramp_damage_pct_per_5s() -> float:
+	return _compute_internal_stat("ramp_damage_pct_per_5s")
+
+func get_crate_bonus_biscuits() -> int:
+	return int(round(_compute_internal_stat("crate_bonus_biscuits")))
+
+func get_lifesteal_pct() -> float:
+	return _compute_internal_stat("lifesteal_pct")
+
+func get_effective_weapon_values(
+	base_fire_rate:float,
+	base_range:float,
+	base_damage:int,
+	base_projectiles:int,
+	base_spread:float
+) -> Dictionary:
+	var fire_rate_mult:float = get_stat("fire_rate_mult")
+	var range_add:float = get_stat("range_add")
+	var damage_mult:float = get_stat("damage_mult")
+	var proj_add:int = int(round(get_stat("projectiles_add")))
+	var spread_add:float = get_stat("spread_deg_add")
 	return {
 		"fire_rate": max(0.05, base_fire_rate * fire_rate_mult),
 		"range": base_range + range_add,

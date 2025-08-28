@@ -40,12 +40,34 @@ var _stats_label : RichTextLabel
 # -----------------------------------------------------------------------------
 const CARD_MIN_W   := 180.0
 const CARD_MAX_W   := 320.0
-const CARD_MIN_H   := 360
-const CARD_MAX_H   := 360.0 * 2
+const CARD_MIN_H   := 360.0
+const CARD_MAX_H   := 720.0
 const GRID_GAP     := 64
 const EDGE_PADDING := 48.0
 
 @onready var DB: Node = get_node("/root/UpgradeDB")
+
+# -----------------------------------------------------------------------------
+# Rarity weights and type bias
+# -----------------------------------------------------------------------------
+const BASE_RARITY_WEIGHTS := {
+	"common": 1.00,
+	"uncommon": 0.45,
+	"rare": 0.15,
+	"legendary": 0.05
+}
+
+const TYPE_WEIGHTS := {
+	"item": 1.00,
+	"weapon": 0.55
+}
+
+const LUCK_RARITY_BONUS := {
+	"common": Vector2(-0.60, 0.00),
+	"uncommon": Vector2(0.40, 0.00),
+	"rare": Vector2(0.90, 0.00),
+	"legendary": Vector2(1.60, 0.00)
+}
 
 # -----------------------------------------------------------------------------
 # Lifecycle
@@ -62,7 +84,10 @@ func _ready() -> void:
 		if DB:
 			DB.db_ready.connect(_on_db_ready)
 	if OFFER_KEYS.is_empty():
-		OFFER_KEYS = ["damage","firerate","range","pickup","projectiles","movespeed"]
+		OFFER_KEYS = [
+			"damage","firerate","range","pickup",
+			"projectiles","movespeed"
+		]
 
 	if title:
 		title.text = "Shop — Risk it for the Biscuit"
@@ -97,11 +122,11 @@ func _first_build() -> void:
 # Node binding
 # -----------------------------------------------------------------------------
 func _bind_refs() -> void:
-	title      = _find_node_as("Title", "Label")            as Label
-	offers_row = _find_node_as("Offers", "HBoxContainer")   as HBoxContainer
-	reroll_btn = _find_node_as("Reroll", "Button")          as Button
-	cont_btn   = _find_node_as("Continue", "Button")        as Button
-	biscuits_l = _find_node_as("Biscuits", "Label")         as Label
+	title      = _find_node_as("Title", "Label") as Label
+	offers_row = _find_node_as("Offers", "HBoxContainer") as HBoxContainer
+	reroll_btn = _find_node_as("Reroll", "Button") as Button
+	cont_btn   = _find_node_as("Continue", "Button") as Button
+	biscuits_l = _find_node_as("Biscuits", "Label") as Label
 
 	if not title:      push_warning("ShopUI.gd: Missing 'Title'")
 	if not reroll_btn: push_warning("ShopUI.gd: Missing 'Reroll'")
@@ -129,7 +154,10 @@ func _find_node_as(name:String, type_name:String) -> Node:
 # -----------------------------------------------------------------------------
 func _make_fullscreen_layout() -> void:
 	anchors_preset = Control.PRESET_FULL_RECT
-	offset_left = 0; offset_top = 0; offset_right = 0; offset_bottom = 0
+	offset_left = 0
+	offset_top = 0
+	offset_right = 0
+	offset_bottom = 0
 
 	if not get_node_or_null("Backdrop"):
 		var bg: ColorRect = ColorRect.new()
@@ -163,11 +191,11 @@ func _ensure_offers_grid() -> void:
 		offers_wrap.add_theme_constant_override("margin_right", EDGE_PADDING)
 		offers_wrap.add_theme_constant_override("margin_top", EDGE_PADDING)
 		offers_wrap.add_theme_constant_override("margin_bottom", EDGE_PADDING)
-
 		if parent_node and parent_node is Container:
 			(parent_node as Container).add_child(offers_wrap)
 			if insert_index >= 0:
-				(parent_node as Container).move_child(offers_wrap, insert_index)
+				(parent_node as Container).move_child(
+					offers_wrap, insert_index)
 		else:
 			add_child(offers_wrap)
 
@@ -187,7 +215,8 @@ func _ensure_offers_grid() -> void:
 func _on_resized() -> void:
 	var vp_w: float = get_viewport_rect().size.x
 	var content_w: float = max(0.0, vp_w - (EDGE_PADDING * 2.0))
-	var cols_fit := int(floor((content_w + GRID_GAP) / (CARD_MIN_W + GRID_GAP)))
+	var cols_fit := int(floor(
+		(content_w + GRID_GAP) / (CARD_MIN_W + GRID_GAP)))
 	var total_cards := SLOTS + 1
 	var cols: int = clamp(cols_fit, 1, min(6, total_cards))
 	if offers_grid:
@@ -204,9 +233,10 @@ func _update_card_sizes(cols: int) -> void:
 	)
 	var padding: float = float((cols - 1) * GRID_GAP)
 	var usable_w: float = max(0.0, avail_size.x - padding)
-	var card_w: float = clamp(usable_w / float(cols), CARD_MIN_W, CARD_MAX_W)
-	var card_h: float = clamp(avail_size.y * 0.48, CARD_MIN_H, CARD_MAX_H)
-
+	var card_w: float = clamp(usable_w / float(cols),
+		CARD_MIN_W, CARD_MAX_W)
+	var card_h: float = clamp(avail_size.y * 0.48,
+		CARD_MIN_H, CARD_MAX_H)
 	for c in offers_grid.get_children():
 		var card := c as PanelContainer
 		if card:
@@ -218,7 +248,9 @@ func _update_card_sizes(cols: int) -> void:
 func _refresh_biscuits(_t:int=0, _d:int=0) -> void:
 	if biscuits_l:
 		biscuits_l.add_theme_font_size_override("font_size", 20)
-		biscuits_l.text = "Biscuits: %d   Reroll: %d" % [GameState.biscuits, _reroll_cost]
+		biscuits_l.text = "Biscuits: %d   Reroll: %d" % [
+			GameState.biscuits, _reroll_cost
+		]
 	_refresh_card_buttons()
 	_refresh_reroll_button()
 	_refresh_stats_card()
@@ -231,47 +263,128 @@ func _generate_if_needed() -> void:
 		return
 	_offers = _roll_offers(SLOTS)
 
+# -----------------------------------------------------------------------------
+# Offer rolling (rarity, type bias, luck-aware)
+# -----------------------------------------------------------------------------
 func _roll_offers(n:int) -> Array[String]:
-	if DB and DB.is_ready() and DB.has_method("roll_offers"):
-		return DB.roll_offers(n, _rng)
 	var pool: Array[String] = []
-	for k in OFFER_KEYS:
-		pool.append(String(k))
-	pool.shuffle()
+	if DB and DB.is_ready():
+		pool = DB.keys_sorted()
+	else:
+		pool = OFFER_KEYS.duplicate()
+	if pool.is_empty():
+		return []
+
+	var weights: Array[float] = []
+	weights.resize(pool.size())
+	for i in pool.size():
+		var key := pool[i]
+		if not _is_entry_available(key):
+			weights[i] = 0.0
+			continue
+		var def: Dictionary = {}
+		if DB and DB.is_ready() and DB.has(key):
+			def = DB.get_entry(key)
+		weights[i] = _entry_weight(def)
+
 	var picks: Array[String] = []
-	while picks.size() < n and pool.size() > 0:
-		picks.append(pool.pop_back())
+	var chosen: Dictionary = {}
+	for _i in n:
+		var idx := _weighted_pick(pool, weights, chosen)
+		if idx < 0:
+			break
+		picks.append(pool[idx])
+		chosen[idx] = true
 	return picks
 
+func _entry_weight(def: Dictionary) -> float:
+	var rarity: String = String(def.get("rarity", "common")).to_lower()
+	var typ: String = String(def.get("type", "item")).to_lower()
+
+	var base_r: float = float(BASE_RARITY_WEIGHTS.get(rarity, 0.1))
+	var type_w: float = float(TYPE_WEIGHTS.get(typ, 1.0))
+	var luck_norm: float = _get_player_luck_norm()
+
+	var r_bonus: Vector2 = (LUCK_RARITY_BONUS.get(rarity, Vector2.ZERO) as Vector2)
+	var mult: float = 1.0 + r_bonus.x * luck_norm
+	mult = max(0.05, mult)
+
+	return base_r * type_w * mult
+
+func _weighted_pick(pool: Array[String], weights: Array[float], chosen: Dictionary) -> int:
+	var total: float = 0.0
+	for i in weights.size():
+		if chosen.has(i):
+			continue
+		total += max(0.0, float(weights[i]))
+
+	if total <= 0.0:
+		for i in weights.size():
+			if not chosen.has(i) and weights[i] > 0.0:
+				return i
+		return -1
+
+	var r: float = _rng.randf() * total
+	var acc: float = 0.0
+	for i in weights.size():
+		if chosen.has(i):
+			continue
+		var w: float = max(0.0, float(weights[i]))
+		if w <= 0.0:
+			continue
+		acc += w
+		if r <= acc:
+			return i
+	return -1
+
+func _is_entry_available(key:String) -> bool:
+	var def: Dictionary = {}
+	if DB and DB.is_ready() and DB.has(key):
+		def = DB.get_entry(key)
+	var typ := String(def.get("type", "item"))
+	var max_lvl := _get_max_level(key)
+	var cur_lvl := GameState.get_item_count(key)
+	if typ == "weapon" and cur_lvl >= 1:
+		return false
+	if cur_lvl >= max_lvl:
+		return false
+	return true
+
+func _get_player_luck_norm() -> float:
+	var luck_val := 0.0
+	if GameState.has_method("get_stat"):
+		luck_val = float(GameState.get_stat("luck"))
+	elif GameState.has_method("get_all_stats"):
+		var all: Dictionary = GameState.get_all_stats()
+		if all.has("luck"):
+			luck_val = float(all["luck"])
+	return clamp(luck_val / 100.0, 0.0, 1.0)
+
+# -----------------------------------------------------------------------------
+# Render offers
+# -----------------------------------------------------------------------------
 func _render_offers() -> void:
 	if offers_grid == null:
 		return
-
 	for n in offers_grid.get_children():
 		(n as Node).queue_free()
-
 	_card_ui.clear()
 	_stats_card = null
 	_stats_vbox = null
 	_stats_label = null
-
 	for i in range(SLOTS):
 		if i >= _offers.size():
 			break
 		var key: String = _offers[i]
-
-		var lvl: int = GameState.get_item_count(key)  
+		var lvl: int = GameState.get_item_count(key)
 		var max_lvl: int = _get_max_level(key)
-
 		var card: PanelContainer = _make_card_container()
 		offers_grid.add_child(card)
-
 		var vb: VBoxContainer = VBoxContainer.new()
 		vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		vb.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		vb.add_theme_constant_override("separation", 8)
 		card.add_child(vb)
-
 		var name_label: Label = Label.new()
 		name_label.text = _upgrade_title(key, lvl, max_lvl)
 		name_label.add_theme_font_size_override("font_size", 22)
@@ -279,7 +392,6 @@ func _render_offers() -> void:
 		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		name_label.custom_minimum_size.y = 32
 		vb.add_child(name_label)
-
 		var desc: Label = Label.new()
 		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		desc.text = _upgrade_desc(key)
@@ -287,12 +399,10 @@ func _render_offers() -> void:
 		desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		desc.size_flags_vertical = Control.SIZE_EXPAND
 		vb.add_child(desc)
-
 		var buttons: HBoxContainer = HBoxContainer.new()
 		buttons.add_theme_constant_override("separation", 8)
 		buttons.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		vb.add_child(buttons)
-
 		var lock_button: Button = Button.new()
 		lock_button.toggle_mode = true
 		lock_button.button_pressed = _slot_locked[i]
@@ -301,13 +411,11 @@ func _render_offers() -> void:
 		lock_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		lock_button.pressed.connect(_on_lock_toggled.bind(i, lock_button))
 		buttons.add_child(lock_button)
-
 		var buy_btn: Button = Button.new()
 		buy_btn.custom_minimum_size = Vector2(0, 40)
 		buy_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		buy_btn.pressed.connect(_on_buy.bind(i))
 		buttons.add_child(buy_btn)
-
 		_card_ui.append({
 			"index": i,
 			"key": key,
@@ -315,7 +423,6 @@ func _render_offers() -> void:
 			"buy": buy_btn,
 			"lock": lock_button
 		})
-
 	_add_stats_card()
 	_refresh_card_buttons()
 	_refresh_reroll_button()
@@ -326,14 +433,12 @@ func _make_card_container() -> PanelContainer:
 	var card: PanelContainer = PanelContainer.new()
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.size_flags_vertical   = 0
-
 	var sb: StyleBoxFlat = StyleBoxFlat.new()
 	sb.bg_color = Color(0.06, 0.09, 0.12, 0.95)
 	sb.set_corner_radius_all(12)
 	sb.set_border_width_all(2)
 	sb.border_color = Color(0.18, 0.22, 0.28, 1.0)
 	sb.set_content_margin_all(12.0)
-
 	card.add_theme_stylebox_override("panel", sb)
 	return card
 
@@ -343,13 +448,11 @@ func _make_card_container() -> PanelContainer:
 func _add_stats_card() -> void:
 	_stats_card = _make_card_container()
 	offers_grid.add_child(_stats_card)
-
 	_stats_vbox = VBoxContainer.new()
 	_stats_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_stats_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_stats_vbox.add_theme_constant_override("separation", 8)
 	_stats_card.add_child(_stats_vbox)
-
 	var name_label: Label = Label.new()
 	name_label.text = "Current Build"
 	name_label.add_theme_font_size_override("font_size", 22)
@@ -357,7 +460,6 @@ func _add_stats_card() -> void:
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.custom_minimum_size.y = 32
 	_stats_vbox.add_child(name_label)
-
 	_stats_label = RichTextLabel.new()
 	_stats_label.fit_content = true
 	_stats_label.bbcode_enabled = true
@@ -381,11 +483,12 @@ func _build_stats_text() -> String:
 		var out_text: String = ""
 		for i in keys.size():
 			var k = keys[i]
-			out_text += "[b]%s:[/b] %s" % [str(k).capitalize(), str(all[k])]
+			out_text += "[b]%s:[/b] %s" % [
+				str(k).capitalize(), str(all[k])
+			]
 			if i < keys.size() - 1:
 				out_text += "\n"
 		return out_text
-
 	var out2: String = ""
 	for i in OFFER_KEYS.size():
 		var key: String = OFFER_KEYS[i]
@@ -409,20 +512,17 @@ func _on_buy(index:int) -> void:
 	if index < 0 or index >= _offers.size():
 		return
 	var key: String = _offers[index]
-	var lvl: int = GameState.get_item_count(key)   
+	var lvl: int = GameState.get_item_count(key)
 	var max_lvl: int = _get_max_level(key)
 	if lvl >= max_lvl:
 		return
-
 	var cost: int = GameState.get_upgrade_cost(key)
 	if not GameState.buy_entry(key, lvl):
 		return
-
 	if not _slot_locked[index]:
 		var replacement: Array[String] = _roll_offers(1)
 		if replacement.size() > 0:
 			_offers[index] = replacement[0]
-
 	_render_offers()
 	_refresh_biscuits()
 
@@ -477,15 +577,12 @@ func _refresh_card_buttons() -> void:
 		if idx < 0 or idx >= _offers.size():
 			continue
 		var key: String = _offers[idx]
-
-		var lvl: int = GameState.get_item_count(key)    
+		var lvl: int = GameState.get_item_count(key)
 		var max_lvl: int = _get_max_level(key)
-		var cost: int = GameState.get_upgrade_cost(key)  
-
+		var cost: int = GameState.get_upgrade_cost(key)
 		var name_label: Label = ui["name"]
 		if name_label:
 			name_label.text = _upgrade_title(key, lvl, max_lvl)
-
 		var buy_btn: Button = ui["buy"]
 		if buy_btn:
 			if lvl >= max_lvl:
