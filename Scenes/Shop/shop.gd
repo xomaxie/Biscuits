@@ -249,7 +249,7 @@ func _refresh_biscuits(_t:int=0, _d:int=0) -> void:
 	if biscuits_l:
 		biscuits_l.add_theme_font_size_override("font_size", 20)
 		biscuits_l.text = "Biscuits: %d   Reroll: %d" % [
-			GameState.biscuits, _reroll_cost
+			GameState.biscuits, _effective_reroll_cost()
 		]
 	_refresh_card_buttons()
 	_refresh_reroll_button()
@@ -378,7 +378,7 @@ func _render_offers() -> void:
 		var key: String = _offers[i]
 		var lvl: int = GameState.get_item_count(key)
 		var max_lvl: int = _get_max_level(key)
-		var card: PanelContainer = _make_card_container()
+		var card: PanelContainer = _make_card_container(_rarity_for(key))
 		offers_grid.add_child(card)
 		var vb: VBoxContainer = VBoxContainer.new()
 		vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -429,15 +429,22 @@ func _render_offers() -> void:
 	_refresh_stats_card()
 	_on_resized()
 
-func _make_card_container() -> PanelContainer:
+func _make_card_container(rarity:String="common") -> PanelContainer:
 	var card: PanelContainer = PanelContainer.new()
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.size_flags_vertical   = 0
+
 	var sb: StyleBoxFlat = StyleBoxFlat.new()
-	sb.bg_color = Color(0.06, 0.09, 0.12, 0.95)
+	sb.bg_color = _rarity_bg_color(rarity)
 	sb.set_corner_radius_all(12)
 	sb.set_border_width_all(2)
-	sb.border_color = Color(0.18, 0.22, 0.28, 1.0)
+	sb.border_color = _rarity_border_color(rarity)
+
+	# shadow color = border color but with lower alpha
+	var bc: Color = sb.border_color
+	sb.shadow_color = Color(bc.r, bc.g, bc.b, 0.25)
+	sb.shadow_size = 8
+
 	sb.set_content_margin_all(12.0)
 	card.add_theme_stylebox_override("panel", sb)
 	return card
@@ -519,15 +526,21 @@ func _on_buy(index:int) -> void:
 	var cost: int = GameState.get_upgrade_cost(key)
 	if not GameState.buy_entry(key, lvl):
 		return
-	if not _slot_locked[index]:
+
+	var was_locked: bool = _slot_locked[index]
+	if not _slot_locked[index] or was_locked:
 		var replacement: Array[String] = _roll_offers(1)
 		if replacement.size() > 0:
 			_offers[index] = replacement[0]
+	if was_locked:
+		_slot_locked[index] = false
+
 	_render_offers()
 	_refresh_biscuits()
 
 func _on_reroll() -> void:
-	if not GameState.spend_biscuits(_reroll_cost):
+	var cost := _effective_reroll_cost()
+	if not GameState.spend_biscuits(cost):
 		return
 	for i in range(_offers.size()):
 		if not _slot_locked[i]:
@@ -594,5 +607,42 @@ func _refresh_card_buttons() -> void:
 
 func _refresh_reroll_button() -> void:
 	if reroll_btn:
-		reroll_btn.text = "Reroll (%d)" % _reroll_cost
-		reroll_btn.disabled = GameState.biscuits < _reroll_cost
+		reroll_btn.text = "Reroll (%d)" % _effective_reroll_cost()
+		reroll_btn.disabled = GameState.biscuits < _effective_reroll_cost()
+
+
+func _rarity_for(key:String) -> String:
+	var def: Dictionary = {}
+	if DB and DB.is_ready() and DB.has(key):
+		def = DB.get_entry(key)
+	return String(def.get("rarity", "common")).to_lower()
+
+func _rarity_border_color(rarity:String) -> Color:
+	match rarity:
+		"legendary":
+			return Color(0.95, 0.75, 0.20, 1.0)
+		"rare":
+			return Color(0.35, 0.60, 1.00, 1.0)
+		"uncommon":
+			return Color(0.35, 0.90, 0.55, 1.0)
+		_:
+			return Color(0.18, 0.22, 0.28, 1.0)
+
+func _rarity_bg_color(rarity:String) -> Color:
+	var base := Color(0.06, 0.09, 0.12, 0.95)
+	match rarity:
+		"legendary":
+			return base.lerp(Color(0.45, 0.33, 0.08, 0.95), 0.25)
+		"rare":
+			return base.lerp(Color(0.14, 0.22, 0.38, 0.95), 0.25)
+		"uncommon":
+			return base.lerp(Color(0.10, 0.22, 0.16, 0.95), 0.25)
+		_:
+			return base
+			
+
+func _effective_reroll_cost() -> int:
+	var mult := 1.0
+	if GameState and GameState.has_method("get_shop_price_mult"):
+		mult = max(0.1, float(GameState.get_shop_price_mult()))
+	return max(1, int(round(float(_reroll_cost) * mult)))

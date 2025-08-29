@@ -20,19 +20,17 @@ enum Phase { PREP, WAVE, GAME_OVER }
 # Exports
 # -----------------------------------------------------------------------------
 @export var starting_biscuits:int = 0
-
-# Wave scaling for enemies
 @export var enemy_hp_per_wave_pct: float = 0.15
-@export var enemy_dmg_per_wave_pct: float = 0.20
+@export var enemy_dmg_per_wave_pct: float = 0.15
 @export var enemy_speed_per_wave_pct: float = 0.02
 
 # -----------------------------------------------------------------------------
 # Runtime state
 # -----------------------------------------------------------------------------
 var biscuits:int = 0
+var biscuits_collected:int = 0
 var wave:int = 1
 var phase:int = Phase.PREP
-
 var _owned_items:Dictionary = {}
 var _owned_weapons:Array[String] = []
 
@@ -56,6 +54,7 @@ const STAT_BASE := {
 	"hp_regen": 0.0,
 	"lifesteal_pct": 0.0,
 	"armor": 0.0,
+	"armor_pct": 0.0,
 	"dodge_pct": 0.0,
 	"luck": 0.0,
 	"harvesting": 0.0,
@@ -70,20 +69,25 @@ const STAT_BASE := {
 	"ramp_damage_pct_per_5s": 0.0,
 	"attack_speed_pct": 0.0,
 	"attack_speed_while_still_pct": 0.0,
-	"speed_pct": 0.0
+	"speed_pct": 0.0,
+	"shop_price_pct": 0.0,
+	"enemy_hp_pct": 0.0,
+	"ranged_damage": 0.0,
+	"melee_damage": 0.0
 }
 
 const FRIENDLY_TO_INTERNAL := {
-	"damage":      "damage_mult",
-	"firerate":    "fire_rate_mult",
-	"range":       "range_add",
-	"pickup":      "pickup_radius_add",
+	"damage": "damage_mult",
+	"firerate": "fire_rate_mult",
+	"range": "range_add",
+	"pickup": "pickup_radius_add",
 	"projectiles": "projectiles_add",
-	"movespeed":   "move_speed",
-	"spread":      "spread_deg_add"
+	"movespeed": "move_speed",
+	"spread": "spread_deg_add"
 }
 
 var _cached_stats:Dictionary = {}
+var _temp_wave_damage_ramp_pct: float = 0.0
 
 # -----------------------------------------------------------------------------
 # DB hookup
@@ -107,10 +111,12 @@ func _on_db_ready() -> void:
 # -----------------------------------------------------------------------------
 func reset_to_defaults() -> void:
 	biscuits = starting_biscuits
+	biscuits_collected = 0
 	wave = 1
 	phase = Phase.PREP
 	_owned_items.clear()
 	_owned_weapons.clear()
+	_temp_wave_damage_ramp_pct = 0.0
 	_recompute_cache()
 	emit_signal("upgrades_changed")
 
@@ -131,10 +137,13 @@ func set_phase(new_phase:int) -> void:
 		return
 	phase = new_phase
 	emit_signal("phase_changed", phase)
+	if phase == Phase.WAVE:
+		_temp_wave_damage_ramp_pct = 0.0
 
 func next_wave() -> void:
 	wave += 1
 	emit_signal("wave_changed", wave)
+	_temp_wave_damage_ramp_pct = 0.0
 
 # -----------------------------------------------------------------------------
 # Currency
@@ -142,6 +151,8 @@ func next_wave() -> void:
 func add_biscuits(amount:int) -> void:
 	if amount == 0:
 		return
+	if amount > 0:
+		biscuits_collected += amount
 	biscuits += amount
 	emit_signal("biscuits_changed", biscuits, amount)
 
@@ -300,6 +311,11 @@ func _apply_effect(
 			add_accum.get("armor", 0.0)
 		) + float(effect.get("add", 0.0))
 
+	elif stat == "armor_pct":
+		add_accum["armor_pct"] = float(
+			add_accum.get("armor_pct", 0.0)
+		) + float(effect.get("add", 0.0))
+
 	elif stat == "dodge_pct":
 		add_accum["dodge_pct"] = float(
 			add_accum.get("dodge_pct", 0.0)
@@ -328,6 +344,16 @@ func _apply_effect(
 	elif stat == "knockback":
 		add_accum["knockback_add"] = float(
 			add_accum.get("knockback_add", 0.0)
+		) + float(effect.get("add", 0.0))
+
+	elif stat == "ranged_damage":
+		add_accum["ranged_damage"] = float(
+			add_accum.get("ranged_damage", 0.0)
+		) + float(effect.get("add", 0.0))
+
+	elif stat == "melee_damage":
+		add_accum["melee_damage"] = float(
+			add_accum.get("melee_damage", 0.0)
 		) + float(effect.get("add", 0.0))
 
 	elif stat == "ramp_damage_pct_per_5s":
@@ -394,17 +420,14 @@ func get_stat(stat_name:String) -> float:
 		var base_ms := _compute_internal_stat("move_speed")
 		var pct := _compute_internal_stat("speed_pct")
 		return base_ms * (1.0 + pct / 100.0)
-
 	if STAT_BASE.has(stat_name):
 		return _compute_internal_stat(stat_name)
-
 	if FRIENDLY_TO_INTERNAL.has(stat_name):
 		var internal_name: String = FRIENDLY_TO_INTERNAL[stat_name]
 		var v: float = _compute_internal_stat(internal_name)
 		if stat_name == "projectiles":
 			return float(round(v))
 		return v
-
 	return 0.0
 
 func get_all_stats() -> Dictionary:
@@ -420,14 +443,42 @@ func get_all_stats() -> Dictionary:
 		"hp_regen": _compute_internal_stat("hp_regen"),
 		"lifesteal": _compute_internal_stat("lifesteal_pct"),
 		"armor": _compute_internal_stat("armor"),
+		"armor_pct": _compute_internal_stat("armor_pct"),
 		"dodge": _compute_internal_stat("dodge_pct"),
 		"luck": _compute_internal_stat("luck"),
 		"attack_speed_pct":
 			_compute_internal_stat("attack_speed_pct"),
 		"attack_speed_while_still_pct":
 			_compute_internal_stat("attack_speed_while_still_pct"),
-		"speed_pct": _compute_internal_stat("speed_pct")
+		"speed_pct": _compute_internal_stat("speed_pct"),
+		"harvesting": _compute_internal_stat("harvesting"),
+		"knockback": _compute_internal_stat("knockback_add"),
+		"pierce": int(round(_compute_internal_stat("pierce_add")))
 	}
+func grant_wave_harvest_income() -> int:
+	var h: float = max(0.0, _compute_internal_stat("harvesting"))
+	var payout: int = int(round(h))
+	if payout > 0:
+		add_biscuits(payout)
+	return payout
+# -----------------------------------------------------------------------------
+# Wave-scope damage ramp
+# -----------------------------------------------------------------------------
+func on_wave_started() -> void:
+	_temp_wave_damage_ramp_pct = 0.0
+
+func add_damage_ramp_step(step_pct: float) -> void:
+	_temp_wave_damage_ramp_pct += max(0.0, step_pct)
+
+func get_damage_mult_pair(kind:String) -> Array:
+	var base_mult: float = _compute_internal_stat("damage_mult")
+	var ramp_mult: float = 1.0 + (_temp_wave_damage_ramp_pct / 100.0)
+	var flat: float = 0.0
+	if kind == "ranged":
+		flat = _compute_internal_stat("ranged_damage")
+	elif kind == "melee":
+		flat = _compute_internal_stat("melee_damage")
+	return [max(0.1, base_mult * ramp_mult), flat]
 
 # -----------------------------------------------------------------------------
 # Helpers for other systems
@@ -491,6 +542,30 @@ func get_effective_weapon_values(
 		"spread": max(0.0, base_spread + spread_add)
 	}
 
+func get_effective_weapon_values_kind(
+	base_fire_rate:float,
+	base_range:float,
+	base_damage:int,
+	base_projectiles:int,
+	base_spread:float,
+	kind:String
+) -> Dictionary:
+	var fire_rate_mult:float = get_stat("fire_rate_mult")
+	var range_add:float = get_stat("range_add")
+	var pair := get_damage_mult_pair(kind)
+	var mult: float = float(pair[0])
+	var flat: float = float(pair[1])
+	var proj_add:int = int(round(get_stat("projectiles_add")))
+	var spread_add:float = get_stat("spread_deg_add")
+	var dmg := int(max(1, round((float(base_damage) + flat) * mult)))
+	return {
+		"fire_rate": max(0.05, base_fire_rate * fire_rate_mult),
+		"range": base_range + range_add,
+		"damage": dmg,
+		"projectiles": max(1, base_projectiles + proj_add),
+		"spread": max(0.0, base_spread + spread_add)
+	}
+
 # -----------------------------------------------------------------------------
 # Pricing helpers
 # -----------------------------------------------------------------------------
@@ -502,3 +577,6 @@ func get_upgrade_cost(upgrade_key: String) -> int:
 
 func can_level(upgrade_key:String) -> bool:
 	return DB.has(upgrade_key)
+
+func get_run_biscuits_collected() -> int:
+	return biscuits_collected

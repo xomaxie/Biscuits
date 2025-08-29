@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3 uid="uid://dk1i6l0hs127p"]
+
+[ext_resource type="Script" uid="uid://hy7wvalqbkgb" path="res://weapons/turret_dropper_weapon.gd" id="1_oaohw"]
+[ext_resource type="PackedScene" uid="uid://bontsqq5boype" path="res://weapons/TurretGun.tscn" id="2_oi0pv"]
+[ext_resource type="Texture2D" uid="uid://drod8u8sd81ko" path="res://art/weapons/backpack_turret.png" id="3_evhyg"]
+
+[node name="TurretDropperWeapon" type="Node2D"]
+script = ExtResource("1_oaohw")
+turret_scene = ExtResource("2_oi0pv")
+deploy_interval = 5.0
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("3_evhyg")
+
+[node name="Muzzle" type="Marker2D" parent="."]
+position = Vector2(0, -36)

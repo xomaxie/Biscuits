@@ -19,6 +19,22 @@ var _spawn_pos: Vector2 = Vector2.ZERO
 var _max_distance: float = -1.0
 var _alive: bool = false
 
+# Optional crit and explosion-mult (set by weapon if supported)
+var _crit_chance_pct: float = 0.0
+var _crit_mult: float = 2.0
+var _explosion_mult: float = 1.0
+
+# Optional split configuration (for glitter_bomb-style behavior)
+var _split_child_scene: PackedScene = null
+var _split_count: int = 0
+var _split_damage: int = 0
+var _split_spread_deg: float = 360.0
+var _split_lifetime_sec: float = 0.6
+var _split_speed_mult: float = 1.0
+var _split_tex_path: String = ""
+var _split_scale_override: Vector2 = Vector2.ZERO
+var _did_split: bool = false
+
 # -----------------------------------------------------------------------------
 # Node Refs
 # -----------------------------------------------------------------------------
@@ -44,7 +60,7 @@ func _ready() -> void:
 	_apply_tint()
 
 # -----------------------------------------------------------------------------
-# Init
+# Init (called by weapon)
 # -----------------------------------------------------------------------------
 func init(
 	dir: Vector2,
@@ -73,6 +89,37 @@ func init(
 	if aoe >= 0.0:
 		aoe_radius = aoe
 	_apply_tint()
+
+# -----------------------------------------------------------------------------
+# Optional config (called by weapon if available)
+# -----------------------------------------------------------------------------
+func set_crit(chance_pct: float, mult: float = 2.0) -> void:
+	_crit_chance_pct = max(0.0, chance_pct)
+	_crit_mult = max(1.0, mult)
+
+func set_explosion_mult(m: float) -> void:
+	_explosion_mult = max(0.0, m)
+
+func set_split_options(opts: Dictionary) -> void:
+	_split_child_scene = opts.get("child_scene", _split_child_scene)
+	_split_count = int(opts.get("count", _split_count))
+	_split_damage = int(opts.get("damage", _split_damage))
+	_split_spread_deg = float(opts.get("spread_deg", _split_spread_deg))
+	_split_lifetime_sec = float(opts.get("lifetime_sec", _split_lifetime_sec))
+	_split_speed_mult = float(opts.get("speed_mult", _split_speed_mult))
+	_split_tex_path = String(opts.get("tex_path", _split_tex_path))
+	var s = opts.get("scale_override", _split_scale_override)
+	if typeof(s) == TYPE_VECTOR2:
+		_split_scale_override = s
+
+# Back-compat minimal API
+func set_split_params(child_scene: PackedScene, count: int, dmg: int, tex_path: String = "", scale_override: Vector2 = Vector2.ZERO) -> void:
+	_split_child_scene = child_scene
+	_split_count = count
+	_split_damage = dmg
+	_split_tex_path = tex_path
+	_split_scale_override = scale_override
+	_split_spread_deg = 360.0
 
 # -----------------------------------------------------------------------------
 # Physics
@@ -105,43 +152,109 @@ func _on_area_entered(area: Area2D) -> void:
 func _apply_hit(target: Node) -> void:
 	if not _alive:
 		return
+
+	# Direct hit (with optional crit)
 	if target != null and target.has_method("take_hit"):
-		target.call("take_hit", damage)
+		var final_damage: int = damage
+		if _crit_chance_pct > 0.0 and randf() < (_crit_chance_pct / 100.0):
+			final_damage = int(max(1.0, round(float(final_damage) * _crit_mult)))
+		target.call("take_hit", final_damage)
+
+	# Knockback only for physics bodies
 	if knockback > 0.0 and target is CharacterBody2D:
 		var body: CharacterBody2D = target as CharacterBody2D
-		var dir: Vector2 = (
-			(body.global_position - global_position).normalized()
-		)
+		var dir: Vector2 = (body.global_position - global_position).normalized()
 		body.velocity += dir * knockback
-	if aoe_radius > 0.0:
-		_apply_aoe()
+
+	# Explode & split on impact if configured
+	if aoe_radius > 0.0 or _split_count > 0:
+		_explode_and_split()
+		return
+
+	# Normal pierce handling when no explosion/split
 	if pierce_left > 0:
 		pierce_left -= 1
 	else:
 		_despawn()
 
 # -----------------------------------------------------------------------------
+# Explosion + Split
+# -----------------------------------------------------------------------------
+func _explode_and_split() -> void:
+	if _did_split:
+		_despawn()
+		return
+	_did_split = true
+
+	# AOE damage (scaled by explosion_mult)
+	if aoe_radius > 0.0:
+		_apply_aoe_damage()
+
+	# Spawn split children (e.g., Glitter Bomb)
+	if _split_child_scene != null and _split_count > 0 and is_instance_valid(_split_child_scene):
+		var world: Node = get_tree().current_scene
+		if world != null:
+			var base_ang: float = velocity.angle()
+			var full_circle: bool = (_split_spread_deg >= 359.0)
+			var step: float = 0.0
+			var start: float = 0.0
+
+			if _split_count > 1:
+				if full_circle:
+					step = TAU / float(_split_count)
+					start = 0.0
+				else:
+					step = deg_to_rad(_split_spread_deg) / float(_split_count - 1)
+					start = -deg_to_rad(_split_spread_deg) * 0.5
+
+			for i in _split_count:
+				var ang: float = (base_ang + (start + step * float(i))) if not full_circle else (start + step * float(i))
+				var dir: Vector2 = Vector2.RIGHT.rotated(ang)
+				var child: Node2D = _split_child_scene.instantiate() as Node2D
+				if child == null:
+					continue
+				world.add_child(child)
+				child.global_position = global_position
+
+				# Visual override for split children if provided
+				_apply_child_visuals(child, _split_tex_path, _split_scale_override)
+
+				# Init child bullet: no AOE, no pierce
+				if child.has_method("init"):
+					var spd: float = speed * max(0.05, _split_speed_mult)
+					child.call("init",
+						dir,
+						spd,
+						max(1, _split_damage),
+						_split_lifetime_sec,
+						global_position,
+						-1.0,   # no max distance (lifetime governs)
+						0,      # pierce
+						knockback,
+						0.0     # aoe off for children
+					)
+
+	_despawn()
+
+# -----------------------------------------------------------------------------
 # AOE
 # -----------------------------------------------------------------------------
-func _apply_aoe() -> void:
-	var space: PhysicsDirectSpaceState2D = (
-		get_world_2d().direct_space_state
-	)
+func _apply_aoe_damage() -> void:
+	var space: PhysicsDirectSpaceState2D = get_world_2d().direct_space_state
 	var circle: CircleShape2D = CircleShape2D.new()
 	circle.radius = aoe_radius
-	var params: PhysicsShapeQueryParameters2D = (
-		PhysicsShapeQueryParameters2D.new()
-	)
+	var params: PhysicsShapeQueryParameters2D = PhysicsShapeQueryParameters2D.new()
 	params.shape = circle
 	params.transform = Transform2D(0.0, global_position)
 	params.collide_with_areas = true
 	params.collide_with_bodies = true
-	var hits: Array[Dictionary] = space.intersect_shape(params, 32)
+	var hits: Array[Dictionary] = space.intersect_shape(params, 64)
+	var aoe_dmg: int = int(max(1.0, round(float(damage) * max(0.0, _explosion_mult))))
 	for h in hits:
 		var collider: Object = h.get("collider")
 		var node: Node = collider as Node
 		if node != null and node != self and node.has_method("take_hit"):
-			node.call("take_hit", damage)
+			node.call("take_hit", aoe_dmg)
 
 # -----------------------------------------------------------------------------
 # Visuals
@@ -168,6 +281,27 @@ func _apply_tint() -> void:
 	for v in _visuals:
 		if is_instance_valid(v):
 			v.self_modulate = base
+
+func _apply_child_visuals(node: Node, tex_path: String, scale_override: Vector2) -> void:
+	if tex_path == "" and scale_override == Vector2.ZERO:
+		return
+	var spr: Sprite2D = null
+	if node is Sprite2D:
+		spr = node as Sprite2D
+	else:
+		spr = node.get_node_or_null("Sprite2D") as Sprite2D
+		if spr == null:
+			for c in node.get_children():
+				if c is Sprite2D:
+					spr = c as Sprite2D
+					break
+	if spr != null:
+		if tex_path != "":
+			var res: Resource = load(tex_path)
+			if res is Texture2D:
+				spr.texture = res
+		if scale_override != Vector2.ZERO:
+			spr.scale = scale_override
 
 # -----------------------------------------------------------------------------
 # Despawn

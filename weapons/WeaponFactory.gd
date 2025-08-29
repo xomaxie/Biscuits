@@ -13,7 +13,7 @@ const PATHS: Dictionary = {
 	"projectile_arc_explosive": "res://weapons/ProjectileWeapon.tscn",
 	"boomerang": "res://weapons/BoomerangWeapon.tscn",
 	"explosive_split":          "res://weapons/ProjectileWeapon.tscn",
-	"turret_dropper":           "res://weapons/ProjectileWeapon.tscn",
+	"turret_dropper":           "res://weapons/TurretDropperWeapon.tscn",
 	"radial_burst":             "res://weapons/ProjectileWeapon.tscn"
 }
 

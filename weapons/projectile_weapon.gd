@@ -37,6 +37,15 @@ var _sprite_apply_deferred_once: bool = false
 var _bullet_tex_path: String = ""
 var _bullet_scale_override: Vector2 = Vector2.ZERO
 
+var _proj_speed_mult_from_atk: float = 1.0
+
+# Split params (for archetypes like "explosive_split")
+var _split_count: int = 0
+var _split_damage: int = 0
+var _split_spread_deg: float = 360.0
+var _split_lifetime_sec: float = 0.6
+var _split_speed_mult: float = 1.0
+
 # -----------------------------------------------------------------------------
 # Lifecycle
 # -----------------------------------------------------------------------------
@@ -56,6 +65,9 @@ func set_attack_speed_bonus_pct(v: float) -> void:
 	_attack_speed_mult = 1.0 + float(clamp(v, -95.0, 5000.0)) / 100.0
 	if debug_attack_speed:
 		print("[W:", name, "] bonus_pct=", v, " mult=", _attack_speed_mult)
+
+func set_projectile_speed_from_attack_mult(m: float) -> void:
+	_proj_speed_mult_from_atk = max(0.05, m)
 
 # -----------------------------------------------------------------------------
 # JSON setup
@@ -79,6 +91,13 @@ func setup_from_json(key: String, weapon_dict_v: Variant) -> void:
 	var bx: float = float(_json_weapon.get("bullet_scale_x", bullet_scale.x))
 	var by: float = float(_json_weapon.get("bullet_scale_y", bullet_scale.y))
 	_bullet_scale_override = Vector2(bx, by)
+
+	# Split-related (optional) — used by glitter_bomb
+	_split_count = int(_json_weapon.get("split_count", 0))
+	_split_damage = int(_json_weapon.get("split_damage", 0))
+	_split_spread_deg = float(_json_weapon.get("split_spread_deg", 360.0))
+	_split_lifetime_sec = float(_json_weapon.get("split_lifetime_sec", 0.6))
+	_split_speed_mult = float(_json_weapon.get("split_speed_mult", 1.0))
 
 	_apply_sprite_overrides()
 	_apply_all_upgrades()
@@ -182,16 +201,24 @@ func _shoot_spread(target_pos: Vector2) -> void:
 		start_rad = -deg_to_rad(total_deg) * 0.5
 		step_rad = deg_to_rad(total_deg) / float(count - 1)
 
-	var lifetime_sec: float = 0.01
-	if base_bullet_speed > 0.0:
-		lifetime_sec = current_range / base_bullet_speed
-
+	var current_speed: float = max(1.0, base_bullet_speed * _proj_speed_mult_from_atk)
+	var lifetime_sec: float = current_range / current_speed
 	var max_distance: float = current_range
+
 	var pierce_base: int = int(_json_weapon.get("pierce", 0))
 	var kb_base: float = float(_json_weapon.get("knockback", 0.0))
 	var aoe: float = float(_json_weapon.get("aoe_radius", 0.0))
 	var pierce: int = GameState.get_pierce_add() + pierce_base
 	var kb: float = GameState.get_knockback_add() + kb_base
+
+	# Optional crit
+	var crit_chance: float = float(_json_weapon.get("crit_chance_pct", 0.0))
+	var crit_mult: float = float(_json_weapon.get("crit_multiplier", 2.0))
+
+	# Optional explosion damage mult (applies only if aoe > 0)
+	var explosion_mult: float = 1.0
+	if aoe > 0.0 and GameState and GameState.has_method("get_explosion_damage_mult"):
+		explosion_mult = max(0.0, float(GameState.get_explosion_damage_mult()))
 
 	for i in count:
 		var ang: float = center_ang + start_rad + step_rad * float(i)
@@ -213,8 +240,51 @@ func _shoot_spread(target_pos: Vector2) -> void:
 			else:
 				b2d.scale = bullet_scale
 
+		# Init bullet core stats
 		if b.has_method("init"):
-			b.call("init", dir, base_bullet_speed, current_damage, lifetime_sec, spawn_pos, max_distance, pierce, kb, aoe)
+			b.call(
+				"init",
+				dir,
+				current_speed,
+				current_damage,
+				lifetime_sec,
+				spawn_pos,
+				max_distance,
+				pierce,
+				kb,
+				aoe
+			)
+
+		# Optional extensions, if the bullet supports them
+		if b.has_method("set_crit"):
+			b.call("set_crit", crit_chance, crit_mult)
+		if b.has_method("set_explosion_mult"):
+			b.call("set_explosion_mult", explosion_mult)
+
+		# Split behavior (e.g., Glitter Bomb). Bullet must implement one of these.
+		if _split_count > 0:
+			# Prefer an options dictionary API if available
+			if b.has_method("set_split_options"):
+				var opts: Dictionary = {
+					"child_scene": bullet_scene,
+					"count": _split_count,
+					"damage": _split_damage,
+					"spread_deg": _split_spread_deg,
+					"lifetime_sec": _split_lifetime_sec,
+					"speed_mult": _split_speed_mult,
+					"tex_path": _bullet_tex_path,
+					"scale_override": _bullet_scale_override,
+				}
+				b.call("set_split_options", opts)
+			elif b.has_method("set_split_params"):
+				# Back-compat minimal API
+				b.call("set_split_params",
+					bullet_scene,
+					_split_count,
+					_split_damage,
+					_bullet_tex_path,
+					_bullet_scale_override
+				)
 
 # -----------------------------------------------------------------------------
 # Bullet visuals

@@ -40,6 +40,7 @@ var _invuln: float = 0.0
 var _alive: bool = true
 var _regen_accum: float = 0.0
 var _lifesteal_accum: float = 0.0
+var _base_max_hp: int = 6
 
 # -----------------------------------------------------------------------------
 # Lifecycle
@@ -47,10 +48,12 @@ var _lifesteal_accum: float = 0.0
 func _ready() -> void:
 	add_to_group("player")
 	_acquire_gs()
+	_base_max_hp = max_hp
+	_refresh_max_hp_from_gs(true)
 	if debug_desk_chair and _gs and _gs.has_method("get_stat"):
 		var base0: float = float(_gs.get_stat("attack_speed_pct"))
-		var still0: float = float(_gs.get_stat(
-			"attack_speed_while_still_pct"))
+		var still0: float = float(
+			_gs.get_stat("attack_speed_while_still_pct"))
 		print("[DeskChair] Startup base=", base0, " still=", still0)
 	_refresh_speed_from_gs()
 	_refresh_attack_speed_bonus(true)
@@ -64,8 +67,6 @@ func _ready() -> void:
 		cam.position_smoothing_enabled = false
 		await get_tree().process_frame
 		cam.position_smoothing_enabled = was
-	hp = max_hp
-	emit_signal("hp_changed", hp, max_hp)
 	_play_anim(_compose_name(false, _last_dir))
 
 # -----------------------------------------------------------------------------
@@ -79,8 +80,7 @@ func _physics_process(dt: float) -> void:
 	_tick_regen(dt)
 	_refresh_speed_from_gs()
 	var v: Vector2 = Input.get_vector(
-		"move_left", "move_right", "move_up", "move_down"
-	)
+		"move_left", "move_right", "move_up", "move_down")
 	velocity = v.normalized() * current_speed
 	move_and_slide()
 	var moving: bool = v.length() > MOVE_DEADZONE
@@ -102,7 +102,10 @@ func take_hit(damage:int = 1, source:Node = null) -> void:
 	if dodge_pct > 0.0 and randf() < (dodge_pct / 100.0):
 		_do_dodge_feedback(source)
 		return
-	var amt: int = int(max(0, damage))
+	var raw_amt: int = int(max(0, damage))
+	if raw_amt <= 0:
+		return
+	var amt: int = _apply_armor(raw_amt)
 	if amt <= 0:
 		return
 	hp -= amt
@@ -125,6 +128,20 @@ func heal(amount:int = 1) -> void:
 
 func is_alive() -> bool:
 	return _alive
+
+# -----------------------------------------------------------------------------
+# Armor
+# -----------------------------------------------------------------------------
+func _apply_armor(incoming:int) -> int:
+	var flat_armor: float = _get_statf("armor")
+	var pct_red: float = _get_statf("armor_pct")
+	var after_flat: float = float(incoming) - max(0.0, flat_armor)
+	var pct_mult: float = 1.0 - clamp(pct_red, -90.0, 90.0) / 100.0
+	var reduced: float = after_flat * max(0.1, pct_mult)
+	var final_amt: int = int(ceil(max(0.0, reduced)))
+	if incoming > 0:
+		final_amt = max(1, final_amt)
+	return final_amt
 
 # -----------------------------------------------------------------------------
 # Regen and lifesteal
@@ -196,23 +213,24 @@ func _acquire_gs() -> void:
 	if _gs != null and is_instance_valid(_gs):
 		return
 	_gs = get_node_or_null("/root/GameState")
-	if _gs and not _gs.is_connected("upgrades_changed",
-		Callable(self, "_on_upgrades_changed")):
+	if _gs and not _gs.is_connected(
+		"upgrades_changed", Callable(self, "_on_upgrades_changed")):
 		_gs.upgrades_changed.connect(_on_upgrades_changed)
-	if _gs and not _gs.is_connected("weapon_purchased",
-		Callable(self, "_on_weapon_purchased")):
+	if _gs and not _gs.is_connected(
+		"weapon_purchased", Callable(self, "_on_weapon_purchased")):
 		_gs.weapon_purchased.connect(_on_weapon_purchased)
 
 # -----------------------------------------------------------------------------
 # Upgrades
 # -----------------------------------------------------------------------------
 func _on_upgrades_changed() -> void:
+	_refresh_max_hp_from_gs(false)
 	_refresh_speed_from_gs()
 	_refresh_attack_speed_bonus(true)
 	if debug_desk_chair and _gs and _gs.has_method("get_stat"):
 		var base_now: float = float(_gs.get_stat("attack_speed_pct"))
-		var still_now: float = float(_gs.get_stat(
-			"attack_speed_while_still_pct"))
+		var still_now: float = float(
+			_gs.get_stat("attack_speed_while_still_pct"))
 		print("[DeskChair] Upgrades base=", base_now, " still=", still_now)
 
 func _refresh_speed_from_gs() -> void:
@@ -258,6 +276,32 @@ func _get_statf(name: String) -> float:
 	if _gs and _gs.has_method("get_stat"):
 		return float(_gs.get_stat(name))
 	return 0.0
+
+# -----------------------------------------------------------------------------
+# Max HP from GameState
+# -----------------------------------------------------------------------------
+func _refresh_max_hp_from_gs(init: bool) -> void:
+	var bonus := int(round(_get_statf("max_hp")))
+	var eff := int(max(1, _base_max_hp + bonus))
+	if eff == max_hp:
+		if init:
+			hp = eff
+			emit_signal("hp_changed", hp, max_hp)
+		return
+	var prev_max := max_hp
+	var prev_hp := hp
+	max_hp = eff
+	if init:
+		hp = eff
+	else:
+		if prev_max > 0:
+			var ratio: float = clamp(
+				float(prev_hp) / float(prev_max), 0.0, 1.0)
+			hp = int(clamp(round(ratio * float(max_hp)), 1.0,
+				float(max_hp)))
+		else:
+			hp = min(hp, max_hp)
+	emit_signal("hp_changed", hp, max_hp)
 
 # -----------------------------------------------------------------------------
 # Boomerang temp speed API

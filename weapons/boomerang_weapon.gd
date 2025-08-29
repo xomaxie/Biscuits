@@ -27,6 +27,7 @@ var _gs: Node = null
 var _muzzle: Marker2D = null
 var _in_flight_count: int = 0
 var _proj_speed_mult: float = 1.0
+var _attack_speed_mult: float = 1.0
 @onready var _sprite: Sprite2D = get_node_or_null("Sprite2D") as Sprite2D
 
 # -----------------------------------------------------------------------------
@@ -41,8 +42,8 @@ func _ready() -> void:
 # -----------------------------------------------------------------------------
 # Attack-speed hooks
 # -----------------------------------------------------------------------------
-func set_attack_speed_bonus_pct(_v: float) -> void:
-	pass
+func set_attack_speed_bonus_pct(v: float) -> void:
+	_attack_speed_mult = 1.0 + float(clamp(v, -95.0, 5000.0)) / 100.0
 
 func set_projectile_speed_from_attack_mult(mult: float) -> void:
 	_proj_speed_mult = max(0.05, float(mult))
@@ -263,7 +264,7 @@ func _effective_values() -> Dictionary:
 	}
 
 func _effective_fire_rate() -> float:
-	return base_fire_rate
+	return base_fire_rate * _attack_speed_mult
 
 func _effective_range() -> float:
 	var eff: Dictionary = _effective_values()

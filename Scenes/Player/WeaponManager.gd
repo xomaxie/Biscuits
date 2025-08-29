@@ -50,7 +50,7 @@ func _ready() -> void:
 	_layout_now()
 
 func _physics_process(delta: float) -> void:
-	var n: int = _weapons.size()
+	var n: int = _layout_weapons().size()
 	if n == 0:
 		return
 	if animate_orbit and (layout == Layout.RING or layout == Layout.ELLIPSE):
@@ -64,8 +64,16 @@ func register_weapon(w: Node2D) -> void:
 	if w == null:
 		return
 	add_child(w)
-	if z_index_boost != 0:
-		w.z_index += z_index_boost
+
+	# Hide and exclude from orbit if the weapon says it's orbitless
+	if not _is_layout_participant(w):
+		if w is CanvasItem:
+			(w as CanvasItem).visible = false
+	else:
+		# Only apply orbit z-index tweak to visible, orbit-participating weapons
+		if z_index_boost != 0:
+			w.z_index += z_index_boost
+
 	_weapons.append(w)
 	_apply_attack_speed_to_weapon(w)
 	_layout_now()
@@ -111,41 +119,92 @@ func _apply_attack_speed_to_weapon(w: Node2D) -> void:
 		w.call("set_projectile_speed_from_attack_mult",
 			_proj_speed_from_atk_mult)
 
-func _apply_rotation_and_depth(w: Node2D, local: Vector2, angle: float) \
--> void:
-	var rot: float = angle
-	if not face_outward:
-		rot += PI
-	rot += deg_to_rad(rotation_offset_deg)
-	w.rotation = rot
+# Orbit participation checks (turrets/backpacks can opt-out)
+func _is_layout_participant(w: Node) -> bool:
+	if w == null:
+		return false
+	if w.has_method("is_orbitless"):
+		var res: Variant = w.call("is_orbitless")
+		if typeof(res) == TYPE_BOOL and bool(res):
+			return false
+	if w.is_in_group("orbitless"):
+		return false
+	if w.has_meta("orbitless") and bool(w.get_meta("orbitless")):
+		return false
+	return true
+
+# Whether to rotate weapon with orbit (aiming weapons can opt-out to keep snap-aim)
+func _should_rotate_with_orbit(w: Node) -> bool:
+	# 1) Explicit API on the weapon wins
+	if w.has_method("should_orbit_rotate"):
+		var res: Variant = w.call("should_orbit_rotate")
+		if typeof(res) == TYPE_BOOL:
+			return bool(res)
+	# 2) Metadata or groups can opt-in/out
+	if w.has_meta("orbit_rotate"):
+		return bool(w.get_meta("orbit_rotate"))
+	if w.is_in_group("orbit_rotate_on"):
+		return true
+	if w.is_in_group("orbit_rotate_off"):
+		return false
+	# 3) Heuristic: if the weapon does its own snap aim, don't override its rotation
+	if w.has_method("_snap_aim"):
+		return false
+	# Default: rotate with orbit
+	return true
+
+func _apply_rotation_and_depth(w: Node2D, local: Vector2, angle: float) -> void:
+	# Always depth-sort
 	if y_depth_sort:
 		w.z_index = z_index_boost + int(center_offset.y + local.y)
+
+	# Expose orbit geometry to weapons (optional read-only hints)
+	w.set_meta("orbit_angle", angle)
+	w.set_meta("orbit_local", local)
+
+	# Only rotate if weapon opts in
+	if _should_rotate_with_orbit(w):
+		var rot: float = angle
+		if not face_outward:
+			rot += PI
+		rot += deg_to_rad(rotation_offset_deg)
+		w.rotation = rot
+
+func _layout_weapons() -> Array[Node2D]:
+	var out: Array[Node2D] = []
+	for w in _weapons:
+		if _is_layout_participant(w):
+			out.append(w)
+	return out
 
 # -----------------------------------------------------------------------------
 # Layouts
 # -----------------------------------------------------------------------------
 func _layout_now() -> void:
-	var n: int = _weapons.size()
+	var list: Array[Node2D] = _layout_weapons()
+	var n: int = list.size()
 	if n == 0:
 		return
 	match layout:
 		Layout.RING:
-			_apply_ring_layout(n)
+			_apply_ring_layout(list)
 		Layout.ELLIPSE:
-			_apply_ellipse_layout(n)
+			_apply_ellipse_layout(list)
 		Layout.TOP_ARC:
-			_apply_top_arc_layout(n)
+			_apply_top_arc_layout(list)
 
-func _apply_ring_layout(n: int) -> void:
+func _apply_ring_layout(list: Array[Node2D]) -> void:
+	var n: int = list.size()
 	var step: float = TAU / float(n)
 	var base: float = _angle_offset
 	for i in n:
 		var angle: float = base + step * float(i)
 		var local: Vector2 = Vector2(cos(angle), sin(angle)) * ring_radius
-		_weapons[i].position = center_offset + local
-		_apply_rotation_and_depth(_weapons[i], local, angle)
+		list[i].position = center_offset + local
+		_apply_rotation_and_depth(list[i], local, angle)
 
-func _apply_ellipse_layout(n: int) -> void:
+func _apply_ellipse_layout(list: Array[Node2D]) -> void:
+	var n: int = list.size()
 	var step: float = TAU / float(n)
 	var base: float = _angle_offset
 	for i in n:
@@ -154,17 +213,18 @@ func _apply_ellipse_layout(n: int) -> void:
 			cos(angle) * ellipse_radius_x,
 			sin(angle) * ellipse_radius_y
 		)
-		_weapons[i].position = center_offset + local
-		_apply_rotation_and_depth(_weapons[i], local, angle)
+		list[i].position = center_offset + local
+		_apply_rotation_and_depth(list[i], local, angle)
 
-func _apply_top_arc_layout(n: int) -> void:
+func _apply_top_arc_layout(list: Array[Node2D]) -> void:
+	var n: int = list.size()
 	if n == 1:
 		var ang_single: float = arc_center_angle
 		var pos_single: Vector2 = Vector2(
 			cos(ang_single), sin(ang_single)
 		) * arc_radius
-		_weapons[0].position = center_offset + pos_single
-		_apply_rotation_and_depth(_weapons[0], pos_single, ang_single)
+		list[0].position = center_offset + pos_single
+		_apply_rotation_and_depth(list[0], pos_single, ang_single)
 		return
 	var start: float = arc_center_angle - arc_span * 0.5
 	var step: float = 0.0
@@ -173,8 +233,8 @@ func _apply_top_arc_layout(n: int) -> void:
 	for i in n:
 		var angle: float = start + step * float(i)
 		var local: Vector2 = Vector2(cos(angle), sin(angle)) * arc_radius
-		_weapons[i].position = center_offset + local
-		_apply_rotation_and_depth(_weapons[i], local, angle)
+		list[i].position = center_offset + local
+		_apply_rotation_and_depth(list[i], local, angle)
 
 # -----------------------------------------------------------------------------
 # Spawning

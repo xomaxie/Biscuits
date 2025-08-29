@@ -134,6 +134,10 @@ func _try_hit(node: Node) -> void:
 	if bag.has(id):
 		return
 	node.call("take_hit", damage)
+	if knockback > 0.0 and node is CharacterBody2D:
+		var body: CharacterBody2D = node as CharacterBody2D
+		var dir: Vector2 = (body.global_position - global_position).normalized()
+		body.velocity += dir * knockback
 	bag[id] = true
 
 # -----------------------------------------------------------------------------

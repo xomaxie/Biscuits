@@ -26,23 +26,25 @@ extends CharacterBody2D
 # -----------------------------------------------------------------------------
 # Node refs & runtime state
 # -----------------------------------------------------------------------------
-@onready var _visual: CanvasItem = _find_visual()
 @onready var contact: Area2D = get_node_or_null("Contact") as Area2D
+@onready var _visual: CanvasItem = _find_visual()
 
 var _target: Node2D = null
 var _nexus: Node2D = null
 var _player: Node2D = null
+var _gs: Node = null
+
 var _touching_nexus: bool = false
 var _touching_player: bool = false
 var _contact_accum: float = 0.0
 var _retarget_accum: float = 0.0
 var _pending_damage: int = 0
-var _took_damage_this_frame: bool = false
 var _flashing: bool = false
-var _gs: Node = null
 var _flash_color: Color = Color(1, 0, 0, 1)
 var _base_flash_time: float = 0.06
 var _drop_mult: float = 1.0
+var _dead: bool = false
+var _anim_gen: int = 0
 
 # -----------------------------------------------------------------------------
 # Sprite/animation helpers
@@ -58,8 +60,6 @@ var _anim_map: Dictionary = {
 var _faces_right: bool = true
 var _anim_speed_base: float = 1.0
 var _oneshot_playing: bool = false
-var _dead: bool = false
-var _anim_gen: int = 0
 
 # -----------------------------------------------------------------------------
 # Target
@@ -79,17 +79,10 @@ func _ready() -> void:
 	if _target == null and target_path != NodePath(""):
 		_target = get_node_or_null(target_path) as Node2D
 
-	if _nexus == null:
-		var nlist: Array = get_tree().get_nodes_in_group("nexus")
-		if nlist.size() > 0:
-			_nexus = nlist[0] as Node2D
+	_nexus = _first_in_group("nexus")
 	if _target == null and _nexus != null:
 		_target = _nexus
-
-	if _player == null:
-		var plist: Array = get_tree().get_nodes_in_group("player")
-		if plist.size() > 0:
-			_player = plist[0] as Node2D
+	_player = _first_in_group("player")
 
 	if contact != null:
 		contact.monitoring = true
@@ -113,13 +106,13 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_retarget_accum += delta
-	if _retarget_accum >= retarget_interval:
+	if _reached(_retarget_accum, retarget_interval):
 		_retarget_accum = 0.0
 		_reselect_target()
 
 	var dir: Vector2 = Vector2.ZERO
 	if _target != null:
-		var dist: float = _target.global_position.distance_to(global_position)
+		var dist: float = _dist_to(_target)
 		if dist > stop_distance:
 			dir = global_position.direction_to(_target.global_position)
 		velocity = dir * speed
@@ -132,7 +125,6 @@ func _physics_process(delta: float) -> void:
 		var applied: int = min(_pending_damage, hp)
 		hp -= applied
 		_pending_damage = 0
-		_took_damage_this_frame = true
 		_flash_hit()
 		if _has_anim("hit"):
 			_play_once("hit")
@@ -143,11 +135,9 @@ func _physics_process(delta: float) -> void:
 			return
 
 	_contact_accum += delta
-	if _contact_accum >= contact_interval:
+	if _reached(_contact_accum, contact_interval):
 		_contact_accum = 0.0
 		_apply_contact_damage()
-
-	_took_damage_this_frame = false
 
 # -----------------------------------------------------------------------------
 # Retargeting
@@ -157,9 +147,8 @@ func _reselect_target() -> void:
 	var best_score: float = -1e9
 
 	if is_instance_valid(_nexus):
-		var s_n: float = _score_target(_nexus)
 		best = _nexus
-		best_score = s_n
+		best_score = _score_target(_nexus)
 
 	if is_instance_valid(_player):
 		var s_p: float = _score_target(_player)
@@ -173,9 +162,8 @@ func _reselect_target() -> void:
 func _score_target(t: Node2D) -> float:
 	if t == null:
 		return -1e9
-	var d: float = max(1.0, global_position.distance_to(t.global_position))
-	var invd: float = 1.0 / d
-	var score: float = invd * distance_weight
+	var d: float = max(1.0, _dist_to(t))
+	var score: float = (1.0 / d) * distance_weight
 
 	if t == _player:
 		if d <= prefer_player_within:
@@ -185,7 +173,8 @@ func _score_target(t: Node2D) -> float:
 			var ph: int = int(_player.hp)
 			var pm: int = max(1, int(_player.max_hp))
 			hp_ratio = float(ph) / float(pm)
-		score += (1.0 - clamp(hp_ratio, 0.0, 1.0)) * player_hp_weight
+		hp_ratio = clamp(hp_ratio, 0.0, 1.0)
+		score += (1.0 - hp_ratio) * player_hp_weight
 
 	if t == _target:
 		score += current_target_stickiness
@@ -196,9 +185,7 @@ func _score_target(t: Node2D) -> float:
 # Damage
 # -----------------------------------------------------------------------------
 func take_hit(dmg: int) -> void:
-	if dmg < 0:
-		dmg = 0
-	if _dead:
+	if dmg < 0 or _dead:
 		return
 	_pending_damage += dmg
 
@@ -209,20 +196,18 @@ func _apply_contact_damage() -> void:
 	var player_overlap: bool = false
 	var nexus_overlap: bool = false
 
-	if _player != null and is_instance_valid(_player):
-		var dp: float = global_position.distance_to(_player.global_position)
+	if is_instance_valid(_player):
+		var dp: float = _dist_to(_player)
 		if _touching_player or dp <= manual_attack_radius:
 			player_overlap = true
 
-	if _nexus != null and is_instance_valid(_nexus):
-		var dn: float = global_position.distance_to(_nexus.global_position)
+	if is_instance_valid(_nexus):
+		var dn: float = _dist_to(_nexus)
 		if _touching_nexus or dn <= manual_attack_radius:
 			nexus_overlap = true
 
 	if player_overlap and nexus_overlap:
-		var sp: float = _score_target(_player)
-		var sn: float = _score_target(_nexus)
-		if sp >= sn:
+		if _score_target(_player) >= _score_target(_nexus):
 			_damage_player()
 		else:
 			_damage_nexus()
@@ -236,34 +221,31 @@ func _damage_player() -> void:
 		return
 	if _player.has_method("take_hit"):
 		_player.take_hit(touch_damage, self)
-		if _has_anim("attack"):
-			_play_once("attack")
-		if debug_attack_logs:
-			print("[Enemy#", str(get_instance_id()), "] attack tick -> Player ",
-				str(touch_damage))
+		_after_attack("Player")
 
 func _damage_nexus() -> void:
 	if not is_instance_valid(_nexus):
 		return
 	if _nexus.has_method("apply_damage"):
 		_nexus.apply_damage(touch_damage)
-		if _has_anim("attack"):
-			_play_once("attack")
-		if debug_attack_logs:
-			print("[Enemy#", str(get_instance_id()), "] attack tick -> Nexus ",
-				str(touch_damage))
+		_after_attack("Nexus")
+
+func _after_attack(label: String) -> void:
+	if _has_anim("attack"):
+		_play_once("attack")
+	if debug_attack_logs:
+		print("[Enemy#", str(get_instance_id()), "] attack tick -> ",
+			label, " ", str(touch_damage))
 
 # -----------------------------------------------------------------------------
 # Lifesteal notify
 # -----------------------------------------------------------------------------
-func _notify_player_damage_dealt(applied:int) -> void:
+func _notify_player_damage_dealt(applied: int) -> void:
 	if applied <= 0:
 		return
 	var p: Node = _player
 	if p == null or not is_instance_valid(p):
-		var plist: Array = get_tree().get_nodes_in_group("player")
-		if plist.size() > 0:
-			p = plist[0]
+		p = _first_in_group("player")
 	if p and p.has_method("report_damage_dealt"):
 		p.report_damage_dealt(applied)
 
@@ -293,17 +275,19 @@ func _flash_hit() -> void:
 	if not is_instance_valid(_visual):
 		return
 	if _flashing:
-		_visual.modulate = Color(1, 1, 1)
-		_visual.self_modulate = Color(1, 1, 1)
+		_reset_visual_modulate()
 	_flashing = true
 	_visual.modulate = _flash_color
 	_visual.self_modulate = _flash_color
 	await get_tree().create_timer(hit_flash_time, true).timeout
 	if not is_instance_valid(self) or not is_instance_valid(_visual):
 		return
+	_reset_visual_modulate()
+	_flashing = false
+
+func _reset_visual_modulate() -> void:
 	_visual.modulate = Color(1, 1, 1)
 	_visual.self_modulate = Color(1, 1, 1)
-	_flashing = false
 
 # -----------------------------------------------------------------------------
 # Contact sensing
@@ -316,13 +300,15 @@ func _on_contact_body_entered(body: Node) -> void:
 		_nexus = body as Node2D
 		_contact_accum = contact_interval
 		if debug_attack_logs:
-			print("[Enemy#", str(get_instance_id()), "] begin attack on Nexus")
+			print("[Enemy#", str(get_instance_id()),
+				"] begin attack on Nexus")
 	elif body.is_in_group("player"):
 		_touching_player = true
 		_player = body as Node2D
 		_contact_accum = contact_interval
 		if debug_attack_logs:
-			print("[Enemy#", str(get_instance_id()), "] begin attack on Player")
+			print("[Enemy#", str(get_instance_id()),
+				"] begin attack on Player")
 
 func _on_contact_body_exited(body: Node) -> void:
 	if body == null:
@@ -330,11 +316,13 @@ func _on_contact_body_exited(body: Node) -> void:
 	if body == _nexus:
 		_touching_nexus = false
 		if debug_attack_logs:
-			print("[Enemy#", str(get_instance_id()), "] end attack on Nexus")
+			print("[Enemy#", str(get_instance_id()),
+				"] end attack on Nexus")
 	if body == _player:
 		_touching_player = false
 		if debug_attack_logs:
-			print("[Enemy#", str(get_instance_id()), "] end attack on Player")
+			print("[Enemy#", str(get_instance_id()),
+				"] end attack on Player")
 
 # -----------------------------------------------------------------------------
 # Debug draw
@@ -371,8 +359,9 @@ func _apply_archetype_json() -> void:
 		_flash_color = Color(1, 0, 0, 1)
 		_drop_mult = 1.0
 		if debug_archetype_logs:
-			print("[Enemy#", str(get_instance_id()), "] no archetype; speed=",
-				str(speed), " hp=", str(hp), " dmg=", str(touch_damage))
+			print("[Enemy#", str(get_instance_id()),
+				"] no archetype; speed=", str(speed),
+				" hp=", str(hp), " dmg=", str(touch_damage))
 		if debug_spawn_logs:
 			_log_spawn_stats()
 		_ensure_sprite_node()
@@ -397,9 +386,9 @@ func _apply_archetype_json() -> void:
 
 	if debug_archetype_logs:
 		print("[Enemy#", str(get_instance_id()), "] applied key=",
-			archetype_key, " speed=", str(speed), " hp=", str(hp),
-			" dmg=", str(touch_damage), " contact=", str(contact_interval))
-
+			archetype_key, " speed=", str(speed), " hp=",
+			str(hp), " dmg=", str(touch_damage), " contact=",
+			str(contact_interval))
 	if debug_spawn_logs:
 		_log_spawn_stats()
 
@@ -408,11 +397,13 @@ func _use_def(def: Dictionary) -> void:
 	var hp_mult: float = float(def.get("hp_mult", 1.0))
 	var dmg_mult: float = float(def.get("touch_damage_mult", 1.0))
 	var retarget_add: float = float(def.get("retarget_interval_add", 0.0))
-	var prefer_override: float = float(def.get("prefer_player_within_override", -1.0))
+	var prefer_override: float = float(
+		def.get("prefer_player_within_override", -1.0))
 	var prox_add: float = float(def.get("player_proximity_bonus_add", 0.0))
 	var dist_w_add: float = float(def.get("distance_weight_add", 0.0))
 	var php_w_add: float = float(def.get("player_hp_weight_add", 0.0))
-	var stick_add: float = float(def.get("current_target_stickiness_add", 0.0))
+	var stick_add: float = float(
+		def.get("current_target_stickiness_add", 0.0))
 	var atk_radius_add: float = float(def.get("manual_attack_radius_add", 0.0))
 	var stop_add: float = float(def.get("stop_distance_add", 0.0))
 	var contact_mult: float = float(def.get("contact_interval_mult", 1.0))
@@ -465,6 +456,7 @@ func _apply_sprite_from_def(def: Dictionary) -> void:
 	if sdef.has("anim_map") and typeof(sdef["anim_map"]) == TYPE_DICTIONARY:
 		for k in sdef["anim_map"].keys():
 			_anim_map[String(k)] = String(sdef["anim_map"][k])
+
 	var default_anim: String = String(
 		sdef.get("default_anim", _anim_map.get("move", "Run"))
 	)
@@ -492,8 +484,9 @@ func _apply_sprite_from_def(def: Dictionary) -> void:
 				anim_to_play = move_nm
 			elif _sprite.sprite_frames.has_animation(idle_nm):
 				anim_to_play = idle_nm
-		_sprite.play(anim_to_play)
-		_update_anim_speed()
+		if anim_to_play != "":
+			_sprite.play(anim_to_play)
+			_update_anim_speed()
 
 func _start_default_anim() -> void:
 	_ensure_sprite_node()
@@ -501,8 +494,11 @@ func _start_default_anim() -> void:
 		return
 	var move_nm: String = String(_anim_map.get("move", "Run"))
 	var idle_nm: String = String(_anim_map.get("idle", "Run"))
-	var pick: String = move_nm if _sprite.sprite_frames.has_animation(move_nm) \
-		else (idle_nm if _sprite.sprite_frames.has_animation(idle_nm) else "")
+	var pick: String = ""
+	if _sprite.sprite_frames.has_animation(move_nm):
+		pick = move_nm
+	elif _sprite.sprite_frames.has_animation(idle_nm):
+		pick = idle_nm
 	if pick != "":
 		_sprite.play(pick)
 		_update_anim_speed()
@@ -546,7 +542,7 @@ func _update_move_idle(dir: Vector2) -> void:
 	if _sprite == null or _sprite.sprite_frames == null:
 		return
 	var moving: bool = dir.length_squared() > 1e-6
-	var key: String = ("move" if moving else "idle")
+	var key: String = "move" if moving else "idle"
 	var want: String = String(_anim_map.get(key, "Run"))
 	if _sprite.animation != want and _sprite.sprite_frames.has_animation(want):
 		_sprite.play(want)
@@ -566,11 +562,11 @@ func _has_anim(kind: String) -> bool:
 func _estimate_anim_time(kind: String, fallback: float = 0.35) -> float:
 	if _sprite == null or _sprite.sprite_frames == null:
 		return fallback
-	var nm := String(_anim_map.get(kind, ""))
+	var nm: String = String(_anim_map.get(kind, ""))
 	if nm == "" or not _sprite.sprite_frames.has_animation(nm):
 		return fallback
-	var frames := _sprite.sprite_frames.get_frame_count(nm)
-	var fps := 10.0
+	var frames: int = _sprite.sprite_frames.get_frame_count(nm)
+	var fps: float = 10.0
 	if _sprite.sprite_frames.has_method("get_animation_speed"):
 		fps = float(_sprite.sprite_frames.get_animation_speed(nm))
 	if fps <= 0.0:
@@ -585,8 +581,9 @@ func _play_once(kind: String, max_time: float = -1.0) -> void:
 	_oneshot_playing = true
 	var nm: String = String(_anim_map.get(kind))
 	_sprite.play(nm)
-	var dur: float = max_time if max_time > 0.0 \
-		else _estimate_anim_time(kind, 0.35)
+	var dur: float = max_time
+	if dur <= 0.0:
+		dur = _estimate_anim_time(kind, 0.35)
 	await get_tree().create_timer(dur, true).timeout
 	if _dead or my_gen != _anim_gen:
 		return
@@ -640,3 +637,23 @@ func _log_spawn_stats() -> void:
 		" tick/s=", str(tick_rate), " stop=", str(stop_distance),
 		" atk=", str(manual_attack_radius), " retarget=",
 		str(retarget_interval))
+
+# -----------------------------------------------------------------------------
+# Small utilities
+# -----------------------------------------------------------------------------
+func _first_in_group(group_name: String) -> Node2D:
+	var list: Array = get_tree().get_nodes_in_group(group_name)
+	if list.size() > 0:
+		var n: Node = list[0]
+		if n is Node2D:
+			return n as Node2D
+	return null
+
+func _dist_to(n: Node2D) -> float:
+	return global_position.distance_to(n.global_position)
+
+func _reached(accum: float, period: float) -> bool:
+	return period > 0.0 and accum >= period
+
+func get_drop_multiplier() -> float:
+	return _drop_mult

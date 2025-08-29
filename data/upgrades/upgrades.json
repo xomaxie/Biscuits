@@ -1,6 +1,350 @@
 {
   "version": 1,
   "items": [
+  {
+	"key": "sticky_notes",
+	"type": "item",
+	"name": "Sticky Notes",
+	"rarity": "common",
+	"order": 37,
+	"cost_base": 20,
+	"tags": ["range", "damage_minus"],
+	"desc": "+30 Range; -5% Damage.",
+	"effects": [
+	  { "stat": "range", "add": 30 },
+	  { "stat": "damage_pct", "add": -5 }
+	]
+  },
+  {
+	"key": "piggy_bank",
+	"type": "item",
+	"name": "Piggy Bank",
+	"rarity": "common",
+	"order": 53,
+	"cost_base": 22,
+	"tags": ["economy", "harvesting", "damage_minus"],
+	"desc": "+8 Harvesting; -3% Damage.",
+	"effects": [
+	  { "stat": "harvesting", "add": 8 },
+	  { "stat": "damage_pct", "add": -3 }
+	]
+  },
+  {
+	"key": "coupon_book",
+	"type": "item",
+	"name": "Coupon Book",
+	"rarity": "uncommon",
+	"order": 54,
+	"cost_base": 38,
+	"tags": ["economy", "harvesting", "shop_discount"],
+	"desc": "+6 Harvesting; -4% shop prices.",
+	"effects": [
+	  { "stat": "harvesting", "add": 6 },
+	  { "stat": "shop_price_pct", "add": -4 }
+	]
+  },
+  {
+	"key": "recycling_program",
+	"type": "item",
+	"name": "Recycling Program",
+	"rarity": "common",
+	"order": 55,
+	"cost_base": 20,
+	"tags": ["economy", "harvesting", "speed_minus"],
+	"desc": "+10 Harvesting; -2% Speed.",
+	"effects": [
+	  { "stat": "harvesting", "add": 10 },
+	  { "stat": "speed_pct", "add": -2 }
+	]
+  },
+  {
+	"key": "after_school_job",
+	"type": "item",
+	"name": "After-School Job",
+	"rarity": "uncommon",
+	"order": 56,
+	"cost_base": 42,
+	"tags": ["economy", "harvesting", "max_hp_minus"],
+	"desc": "+12 Harvesting; -5 Max HP.",
+	"effects": [
+	  { "stat": "harvesting", "add": 12 },
+	  { "stat": "max_hp", "add": -5 }
+	]
+  },
+  {
+	"key": "yard_sale",
+	"type": "item",
+	"name": "Yard Sale",
+	"rarity": "rare",
+	"order": 57,
+	"cost_base": 70,
+	"tags": ["economy", "harvesting", "enemy_damage_up"],
+	"desc": "+20 Harvesting; enemies have +5% damage.",
+	"effects": [
+	  { "stat": "harvesting", "add": 20 },
+	  { "stat": "enemy_damage_pct", "add": 5 }
+	]
+  },
+  {
+	"key": "paper_route",
+	"type": "item",
+	"name": "Paper Route",
+	"rarity": "uncommon",
+	"order": 58,
+	"cost_base": 40,
+	"tags": ["economy", "harvesting", "pickup", "speed_minus"],
+	"desc": "+8 Harvesting; +40 Pickup Radius; -2% Speed.",
+	"effects": [
+	  { "stat": "harvesting", "add": 8 },
+	  { "stat": "pickup_radius_add", "add": 40 },
+	  { "stat": "speed_pct", "add": -2 }
+	]
+  },
+  {
+	"key": "fundraiser_catalog",
+	"type": "item",
+	"name": "Fundraiser Catalog",
+	"rarity": "rare",
+	"order": 59,
+	"cost_base": 78,
+	"tags": ["economy", "harvesting", "attack_speed_minus"],
+	"desc": "+18 Harvesting; -5% Attack Speed.",
+	"effects": [
+	  { "stat": "harvesting", "add": 18 },
+	  { "stat": "attack_speed_pct", "add": -5 }
+	]
+  },
+  {
+	"key": "class_treasurer",
+	"type": "item",
+	"name": "Class Treasurer",
+	"rarity": "rare",
+	"order": 60,
+	"cost_base": 88,
+	"tags": ["economy", "harvesting", "enemy_health_up"],
+	"desc": "+25 Harvesting; enemies have +10% health.",
+	"effects": [
+	  { "stat": "harvesting", "add": 25 },
+	  { "stat": "enemy_hp_pct", "add": 10 }
+	]
+  },
+  {
+	"key": "pocket_magnet",
+	"type": "item",
+	"name": "Pocket Magnet",
+	"rarity": "uncommon",
+	"order": 38,
+	"cost_base": 35,
+	"tags": ["pickup", "speed_minus"],
+	"desc": "+50 Pickup Radius; -2% Speed.",
+	"effects": [
+	  { "stat": "pickup_radius_add", "add": 50 },
+	  { "stat": "speed_pct", "add": -2 }
+	]
+  },
+  {
+	"key": "oversized_hoodie",
+	"type": "item",
+	"name": "Oversized Hoodie",
+	"rarity": "uncommon",
+	"order": 39,
+	"cost_base": 40,
+	"tags": ["dodge", "speed_minus"],
+	"desc": "+6% Dodge; -5% Speed.",
+	"effects": [
+	  { "stat": "dodge_pct", "add": 6 },
+	  { "stat": "speed_pct", "add": -5 }
+	]
+  },
+  {
+	"key": "training_wheels",
+	"type": "item",
+	"name": "Training Wheels",
+	"rarity": "common",
+	"order": 40,
+	"cost_base": 22,
+	"tags": ["speed", "range_minus"],
+	"desc": "+10% Speed; -10 Range.",
+	"effects": [
+	  { "stat": "speed_pct", "add": 10 },
+	  { "stat": "range", "add": -10 }
+	]
+  },
+  {
+	"key": "binder_clips",
+	"type": "item",
+	"name": "Binder Clips",
+	"rarity": "uncommon",
+	"order": 41,
+	"cost_base": 36,
+	"tags": ["economy", "harvesting_minus"],
+	"desc": "-6% shop prices; -3 Harvesting.",
+	"effects": [
+	  { "stat": "shop_price_pct", "add": -6 },
+	  { "stat": "harvesting", "add": -3 }
+	]
+  },
+  {
+	"key": "snack_stash",
+	"type": "item",
+	"name": "Snack Stash",
+	"rarity": "common",
+	"order": 42,
+	"cost_base": 24,
+	"tags": ["crate_bonus", "regen", "speed_minus"],
+	"desc": "+1 biscuit when you pick up a barrel; +0.25 HP Regeneration; -1% Speed.",
+	"effects": [
+	  { "stat": "crate_bonus_biscuits", "add": 1 },
+	  { "stat": "hp_regen", "add": 0.25 },
+	  { "stat": "speed_pct", "add": -1 }
+	]
+  },
+  {
+	"key": "shop_teachers_apron",
+	"type": "item",
+	"name": "Shop Teacher's Apron",
+	"rarity": "rare",
+	"order": 43,
+	"cost_base": 78,
+	"tags": ["explosion_damage", "speed_minus"],
+	"desc": "+20% Explosion Damage; -2% Speed.",
+	"effects": [
+	  { "stat": "explosion_damage_pct", "add": 20 },
+	  { "stat": "speed_pct", "add": -2 }
+	]
+  },
+  {
+	"key": "recess_whistle",
+	"type": "item",
+	"name": "Recess Whistle",
+	"rarity": "rare",
+	"order": 44,
+	"cost_base": 82,
+	"tags": ["enemy_speed_down", "enemy_damage_up"],
+	"desc": "Enemies have -8% Speed; +5% Damage.",
+	"effects": [
+	  { "stat": "enemy_speed_pct", "add": -8 },
+	  { "stat": "enemy_damage_pct", "add": 5 }
+	]
+  },
+
+  {
+	"key": "elbow_pads",
+	"type": "item",
+	"name": "Elbow Pads",
+	"rarity": "common",
+	"order": 45,
+	"cost_base": 18,
+	"tags": ["knockback", "armor", "speed_minus"],
+	"desc": "+3 Knockback; +1 Armor; -2% Speed.",
+	"effects": [
+	  { "stat": "knockback", "add": 3 },
+	  { "stat": "armor", "add": 1 },
+	  { "stat": "speed_pct", "add": -2 }
+	]
+  },
+  {
+	"key": "bouncy_shoes",
+	"type": "item",
+	"name": "Bouncy Shoes",
+	"rarity": "uncommon",
+	"order": 46,
+	"cost_base": 35,
+	"tags": ["knockback", "speed", "spread_plus"],
+	"desc": "+5 Knockback; +6% Speed; +6° Spread.",
+	"effects": [
+	  { "stat": "knockback", "add": 5 },
+	  { "stat": "speed_pct", "add": 6 },
+	  { "stat": "spread_deg_add", "add": 6 }
+	]
+  },
+  {
+	"key": "gym_mat",
+	"type": "item",
+	"name": "Gym Mat",
+	"rarity": "rare",
+	"order": 47,
+	"cost_base": 80,
+	"tags": ["knockback", "range_minus", "attack_speed_minus"],
+	"desc": "+8 Knockback; -15 Range; -2% Attack Speed.",
+	"effects": [
+	  { "stat": "knockback", "add": 8 },
+	  { "stat": "range", "add": -15 },
+	  { "stat": "attack_speed_pct", "add": -2 }
+	]
+  },
+  {
+	"key": "reinforced_tray",
+	"type": "item",
+	"name": "Reinforced Tray",
+	"rarity": "rare",
+	"order": 48,
+	"cost_base": 85,
+	"tags": ["knockback", "pierce", "damage_minus"],
+	"desc": "+6 Knockback; Projectiles pierce +1; -5% Damage.",
+	"effects": [
+	  { "stat": "knockback", "add": 6 },
+	  { "stat": "projectile_pierce", "add": 1 },
+	  { "stat": "damage_pct", "add": -5 }
+	]
+  },
+
+  {
+	"key": "extra_credit",
+	"type": "item",
+	"name": "Extra Credit",
+	"rarity": "common",
+	"order": 49,
+	"cost_base": 24,
+	"tags": ["damage", "luck_minus"],
+	"desc": "+6% Damage; -10 Luck.",
+	"effects": [
+	  { "stat": "damage_pct", "add": 6 },
+	  { "stat": "luck", "add": -10 }
+	]
+  },
+  {
+	"key": "spicy_lunch",
+	"type": "item",
+	"name": "Spicy Lunch",
+	"rarity": "uncommon",
+	"order": 50,
+	"cost_base": 42,
+	"tags": ["damage", "regen_minus"],
+	"desc": "+10% Damage; -0.25 HP Regeneration.",
+	"effects": [
+	  { "stat": "damage_pct", "add": 10 },
+	  { "stat": "hp_regen", "add": -0.25 }
+	]
+  },
+  {
+	"key": "pop_quiz",
+	"type": "item",
+	"name": "Pop Quiz",
+	"rarity": "rare",
+	"order": 51,
+	"cost_base": 86,
+	"tags": ["damage", "enemy_health_up"],
+	"desc": "+15% Damage; enemies have +10% health.",
+	"effects": [
+	  { "stat": "damage_pct", "add": 15 },
+	  { "stat": "enemy_hp_pct", "add": 10 }
+	]
+  },
+  {
+	"key": "adrenaline_rush",
+	"type": "item",
+	"name": "Adrenaline Rush",
+	"rarity": "rare",
+	"order": 52,
+	"cost_base": 90,
+	"tags": ["damage", "dodge_minus"],
+	"desc": "+18% Damage; -6% Dodge.",
+	"effects": [
+	  { "stat": "damage_pct", "add": 18 },
+	  { "stat": "dodge_pct", "add": -6 }
+	]
+  },
 	{
 	  "key": "cookie_gremlin",
 	  "type": "item",
@@ -211,6 +555,7 @@
 	  ]
 	}
   ],
+
 "weapons": [
   {
 	"key": "pencil_darts",
@@ -288,11 +633,11 @@
 	  "aoe_radius": 0.0,
 	  "knockback": 1,
 	  "sprite_tex": "res://art/weapons/rubber_band_sling.png",
-	  "sprite_scale_x": 0.1,
-	  "sprite_scale_y": 0.1,
+	  "sprite_scale_x": 0.3,
+	  "sprite_scale_y": 0.3,
 	  "bullet_sprite_tex": "res://art/weapons/rubber_band_sling.png",
-	  "bullet_scale_x": 0.1,
-	  "bullet_scale_y": 0.1
+	  "bullet_scale_x": 0.2,
+	  "bullet_scale_y": 0.2
 	}
   },
   {
@@ -342,11 +687,11 @@
 	  "aoe_radius": 40.0,
 	  "knockback": 2,
 	  "sprite_tex": "res://art/weapons/soda_pop_rocket.png",
-	  "sprite_scale_x": 0.1,
-	  "sprite_scale_y": 0.1,
+	  "sprite_scale_x": 0.3,
+	  "sprite_scale_y": 0.3,
 	  "bullet_sprite_tex": "res://art/weapons/soda_pop_rocket.png",
-	  "bullet_scale_x": 0.1,
-	  "bullet_scale_y": 0.1
+	  "bullet_scale_x": 0.2,
+	  "bullet_scale_y": 0.2
 	}
   },
   {
@@ -370,11 +715,11 @@
 	  "aoe_radius": 0.0,
 	  "knockback": 1,
 	  "sprite_tex": "res://art/weapons/eraser_boomerang.png",
-	  "sprite_scale_x": 0.1,
-	  "sprite_scale_y": 0.1,
+	  "sprite_scale_x": 0.3,
+	  "sprite_scale_y": 0.3,
 	  "bullet_sprite_tex": "res://art/weapons/eraser_boomerang.png",
-	  "bullet_scale_x": 0.1,
-	  "bullet_scale_y": 0.1
+	  "bullet_scale_x": 0.2,
+	  "bullet_scale_y": 0.2
 	}
   },
   {
@@ -426,37 +771,38 @@
 	  "split_damage": 1,
 	  "knockback": 1,
 	  "sprite_tex": "res://art/weapons/glitter_bomb.png",
-	  "sprite_scale_x": 0.1,
-	  "sprite_scale_y": 0.1,
-	  "bullet_sprite_tex": "res://art/weapons/glitter_bomb.png",
-	  "bullet_scale_x": 0.1,
-	  "bullet_scale_y": 0.1
+	  "sprite_scale_x": 0.3,
+	  "sprite_scale_y": 0.3,
+	  "bullet_sprite_tex": "res://art/weapons/pencil_darts.png",
+	  "bullet_scale_x": 0.2,
+	  "bullet_scale_y": 0.2
 	}
   },
   {
 	"key": "backpack_turret",
 	"type": "weapon",
 	"name": "Backpack Turret",
-	"rarity": "rare",
+	"rarity": "common",
 	"order": 132,
-	"cost_base": 80,
+	"cost_base": 1,
 	"tags": ["turret", "structure"],
 	"desc": "Spawns a stationary turret every few seconds.",
 	"weapon": {
 	  "archetype": "turret_dropper",
-	  "deploy_interval": 8.0,
+	  "deploy_interval": 5,
 	  "turret": {
 		"fire_rate": 2.0,
-		"damage": 1,
+		"damage": 3,
 		"bullet_speed": 700,
-		"range": 520
+		"range": 520,
+		"max_turrets": 3
 	  },
 	  "sprite_tex": "res://art/weapons/backpack_turret.png",
-	  "sprite_scale_x": 0.1,
-	  "sprite_scale_y": 0.1,
-	  "bullet_sprite_tex": "res://art/weapons/backpack_turret.png",
-	  "bullet_scale_x": 0.1,
-	  "bullet_scale_y": 0.1
+	  "sprite_scale_x": 0.3,
+	  "sprite_scale_y": 0.3,
+	  "bullet_sprite_tex": "res://art/weapons/pencil_darts.png",
+	  "bullet_scale_x": 0.2,
+	  "bullet_scale_y": 0.2
 	}
   },
 {
