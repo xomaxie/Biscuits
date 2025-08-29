@@ -43,7 +43,7 @@ const DEBUG_SPEED := false
 # Stat base and mappings
 # -----------------------------------------------------------------------------
 const STAT_BASE := {
-	"move_speed": 300.0,
+	"move_speed": 330.0,
 	"damage_mult": 1.0,
 	"fire_rate_mult": 1.0,
 	"range_add": 0.0,
@@ -65,7 +65,7 @@ const STAT_BASE := {
 	"enemy_speed_mult": 1.0,
 	"explosion_damage_mult": 1.0,
 	"pierce_add": 0.0,
-	"knockback_add": 0.0,
+	"knockback_add": 1.0,
 	"ramp_damage_pct_per_5s": 0.0,
 	"attack_speed_pct": 0.0,
 	"attack_speed_while_still_pct": 0.0,

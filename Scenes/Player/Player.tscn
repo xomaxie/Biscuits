@@ -1218,7 +1218,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"RunBackward",
-"speed": 7.0
+"speed": 9.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -1247,7 +1247,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"RunForward",
-"speed": 7.0
+"speed": 9.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -1276,7 +1276,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"RunLeft",
-"speed": 7.0
+"speed": 9.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -1305,7 +1305,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"RunLeftBackward",
-"speed": 7.0
+"speed": 9.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -1334,7 +1334,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"RunLeftForward",
-"speed": 7.0
+"speed": 9.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -1363,7 +1363,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"RunRight",
-"speed": 7.0
+"speed": 9.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -1392,7 +1392,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"RunRightBackward",
-"speed": 7.0
+"speed": 9.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -1421,7 +1421,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"RunRightForward",
-"speed": 7.0
+"speed": 9.0
 }]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_esmjy"]
@@ -1430,13 +1430,13 @@ radius = 8.06226
 [node name="Player" type="CharacterBody2D"]
 collision_mask = 2
 script = ExtResource("1_h54ih")
-move_speed = 300.0
+move_speed = 320.0
 debug_desk_chair = false
 
 [node name="Sprite2D" type="AnimatedSprite2D" parent="."]
 scale = Vector2(4, 4)
 sprite_frames = SubResource("SpriteFrames_0u84n")
-animation = &"DeathRightForward"
+animation = &"RunRightForward"
 offset = Vector2(0, -8.905)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

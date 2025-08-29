@@ -15,12 +15,17 @@ run/main_scene="uid://c207eh03jhkby"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[audio]
+
+buses/default_bus_layout="uid://2fjdxvl153ab"
+
 [autoload]
 
 GameState="*res://autoload/GameState.gd"
 UpgradeDB="*res://data/upgrade_db.gd"
 WeaponFactory="*res://weapons/WeaponFactory.gd"
 EnemyDB="*res://autoload/EnemyDB.gd"
+MusicManager="*res://autoload/MusicManager.gd"
 
 [editor]
 

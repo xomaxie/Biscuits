@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=4 uid="uid://c8it8ws3qx32f"]
+[gd_scene load_steps=29 format=4 uid="uid://c8it8ws3qx32f"]
 
 [ext_resource type="Script" uid="uid://cyf26hoy0a1wi" path="res://Scenes/game.gd" id="1_b2bpf"]
 [ext_resource type="TileSet" uid="uid://c8x3l763koufi" path="res://Scenes/Game.tres" id="2_3so38"]
@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" uid="uid://dfocspoa7qtk7" path="res://Pickups/BiscuitBarrel.tscn" id="10_dahhg"]
 [ext_resource type="PackedScene" uid="uid://q7dhpi6lm4tl" path="res://Scenes/Shop/Shop.tscn" id="11_dahhg"]
 [ext_resource type="Texture2D" uid="uid://da53jhegnx1fm" path="res://Tilesets/cH87+8.png" id="12_3so38"]
+[ext_resource type="Script" uid="uid://b54cs8xofqq7m" path="res://Scenes/canvas_layer.gd" id="13_3cx6b"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_2irst"]
 radius = 42.107
@@ -121,6 +122,9 @@ y_sort_enabled = true
 script = ExtResource("1_b2bpf")
 debug_start_with_biscuits = true
 debug_biscuit_amount = 25
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+script = ExtResource("13_3cx6b")
 
 [node name="World" type="Node2D" parent="."]
 

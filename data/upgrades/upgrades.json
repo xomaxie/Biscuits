@@ -633,11 +633,11 @@
 	  "aoe_radius": 0.0,
 	  "knockback": 1,
 	  "sprite_tex": "res://art/weapons/rubber_band_sling.png",
-	  "sprite_scale_x": 0.3,
-	  "sprite_scale_y": 0.3,
-	  "bullet_sprite_tex": "res://art/weapons/rubber_band_sling.png",
-	  "bullet_scale_x": 0.2,
-	  "bullet_scale_y": 0.2
+	  "sprite_scale_x": 0.35,
+	  "sprite_scale_y": 0.35,
+	  "bullet_sprite_tex": "res://art/weapons/rubber_band_sling_projectile.png",
+	  "bullet_scale_x": 0.4,
+	  "bullet_scale_y": 0.4
 	}
   },
   {
@@ -782,9 +782,9 @@
 	"key": "backpack_turret",
 	"type": "weapon",
 	"name": "Backpack Turret",
-	"rarity": "common",
+	"rarity": "rare",
 	"order": 132,
-	"cost_base": 1,
+	"cost_base": 80,
 	"tags": ["turret", "structure"],
 	"desc": "Spawns a stationary turret every few seconds.",
 	"weapon": {

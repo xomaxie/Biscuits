@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3 uid="uid://dfhos6dc1q2om"]
+[gd_scene load_steps=5 format=3 uid="uid://dfhos6dc1q2om"]
 
 [ext_resource type="Script" uid="uid://xg40ccusorf0" path="res://Scenes/NPCs/enemy.gd" id="1_xfrnf"]
+[ext_resource type="PackedScene" uid="uid://65uylbwhdw1a" path="res://Pickups/BiscuitPickup.tscn" id="2_52wyw"]
 [ext_resource type="SpriteFrames" uid="uid://dlvarewsi8u1v" path="res://art/enemies/Bat.tres" id="2_xfrnf"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_gwnmk"]
@@ -15,6 +16,7 @@ debug_attack_logs = false
 hit_flash_time = 0.25
 prefer_player_within = 400.0
 debug_spawn_logs = false
+biscuit_pickup_scene = ExtResource("2_52wyw")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 scale = Vector2(0.495, 0.495)

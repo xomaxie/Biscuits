@@ -32,21 +32,15 @@ extends Node2D
 @export var nexus_heal_debug: bool = false
 @export var debug_start_with_biscuits: bool = false
 @export var debug_biscuit_amount: int = 10000
+@export var music_fade_sec: float = 5
 
 # -----------------------------------------------------------------------------
-# Style state
+# Runtime
 # -----------------------------------------------------------------------------
+var _mm: Node = null
 var _nexus_fill: StyleBoxFlat
 var _player_fill: StyleBoxFlat
-
-# -----------------------------------------------------------------------------
-# UI visibility
-# -----------------------------------------------------------------------------
 var _ui_prev_visible: Dictionary = {}
-
-# -----------------------------------------------------------------------------
-# Damage ramp timer
-# -----------------------------------------------------------------------------
 var _ramp_timer: Timer
 
 # -----------------------------------------------------------------------------
@@ -91,7 +85,7 @@ func _ready() -> void:
 				_update_label_style(player_label, pr)
 
 	if player and (player.has_signal("died") or player.has_signal("player_died")):
-		var sig := "died" if player.has_signal("died") else "player_died"
+		var sig: String = "died" if player.has_signal("died") else "player_died"
 		player.connect(sig, Callable(self, "_on_player_died"))
 
 	if spawner.has_method("configure"):
@@ -102,6 +96,10 @@ func _ready() -> void:
 	GameState.phase_changed.connect(_on_phase_changed)
 	GameState.run_started.connect(_on_run_started)
 	GameState.run_ended.connect(_on_run_ended)
+
+	_mm = get_node_or_null("/root/MusicManager")
+	if _mm:
+		_mm.call("play_run_start", music_fade_sec)
 
 	GameState.start_run()
 	_enter_prep()
@@ -132,8 +130,10 @@ func _start_wave() -> void:
 	if barrel_spawner and barrel_spawner.has_method("on_wave_started"):
 		barrel_spawner.on_wave_started(GameState.wave)
 	_ramp_timer.start()
-	var dur := _get_wave_duration(GameState.wave)
+	var dur: float = _get_wave_duration(GameState.wave)
 	wave_timer.start(dur)
+	if _mm:
+		_mm.call("unduck_music", 0.1)
 
 func _enter_shop() -> void:
 	_set_spawning(false)
@@ -141,7 +141,6 @@ func _enter_shop() -> void:
 	_heal_player_to_full()
 	_ramp_timer.stop()
 
-	# Harvesting payout at wave end
 	var harvest: int = 0
 	if GameState and GameState.has_method("grant_wave_harvest_income"):
 		harvest = GameState.grant_wave_harvest_income()
@@ -155,7 +154,8 @@ func _enter_shop() -> void:
 			else "Shop — Spend your biscuits"
 		)
 	shop_ui.show()
-
+	if _mm:
+		_mm.call("duck_music", music_fade_sec)
 
 func _on_prep_timeout() -> void:
 	_start_wave()
@@ -177,7 +177,7 @@ func _set_spawning(enabled: bool) -> void:
 # -----------------------------------------------------------------------------
 # Dynamic duration helper
 # -----------------------------------------------------------------------------
-func _get_wave_duration(w:int) -> float:
+func _get_wave_duration(w: int) -> float:
 	if w <= early_wave_count:
 		return early_wave_duration
 	return late_wave_duration
@@ -226,17 +226,19 @@ func _refresh_timer_ui() -> void:
 		GameState.Phase.GAME_OVER:
 			wave_label.text = "Game Over"
 
-func _on_biscuits_changed(total:int, delta:int) -> void:
+func _on_biscuits_changed(total: int, delta: int) -> void:
 	if biscuit_label:
 		biscuit_label.text = "Biscuits: %d" % total
 	if nexus_heal_enabled and delta > 0 and GameState.phase == GameState.Phase.WAVE:
 		_heal_nexus_by_biscuits(delta)
 
-func _on_wave_changed(_new_wave:int) -> void:
+func _on_wave_changed(_new_wave: int) -> void:
 	pass
 
-func _on_phase_changed(_p:int) -> void:
+func _on_phase_changed(p: int) -> void:
 	_refresh_timer_ui()
+	if _mm and p == GameState.Phase.GAME_OVER:
+		_mm.call("stop_music", music_fade_sec)
 
 func _on_run_started() -> void:
 	if debug_start_with_biscuits:
@@ -244,20 +246,22 @@ func _on_run_started() -> void:
 	_on_biscuits_changed(GameState.biscuits, 0)
 	_on_phase_changed(GameState.phase)
 
-func _on_run_ended(_victory:bool) -> void:
+func _on_run_ended(_victory: bool) -> void:
 	if shop_ui:
 		shop_ui.hide()
 	_ramp_timer.stop()
 	_set_shop_ui_state(false)
 	_show_game_over()
+	if _mm:
+		_mm.call("stop_music", music_fade_sec)
 
-func add_biscuits(amount:int) -> void:
+func add_biscuits(amount: int) -> void:
 	GameState.add_biscuits(max(0, amount))
 
 # -----------------------------------------------------------------------------
 # Nexus events
 # -----------------------------------------------------------------------------
-func _on_nexus_hp_changed(current:int, maxv:int) -> void:
+func _on_nexus_hp_changed(current: int, maxv: int) -> void:
 	if nexus_bar:
 		nexus_bar.max_value = maxv
 		nexus_bar.value = current
@@ -280,7 +284,7 @@ func _on_nexus_destroyed() -> void:
 # -----------------------------------------------------------------------------
 # Player events
 # -----------------------------------------------------------------------------
-func _on_player_hp_changed(current:int, maxv:int) -> void:
+func _on_player_hp_changed(current: int, maxv: int) -> void:
 	if player_bar:
 		player_bar.max_value = maxv
 		player_bar.value = current
@@ -328,7 +332,7 @@ func _heal_player_to_full() -> void:
 			if player_label:
 				_update_label_style(player_label, 1.0)
 
-func _heal_nexus_by_biscuits(delta_biscuits:int) -> void:
+func _heal_nexus_by_biscuits(delta_biscuits: int) -> void:
 	if nexus == null:
 		return
 	if not ("hp" in nexus and "max_hp" in nexus):
@@ -361,7 +365,7 @@ func _heal_nexus_by_biscuits(delta_biscuits:int) -> void:
 func _on_ramp_tick() -> void:
 	if GameState.phase != GameState.Phase.WAVE:
 		return
-	var step := 0.0
+	var step: float = 0.0
 	if GameState.has_method("get_ramp_damage_pct_per_5s"):
 		step = float(GameState.get_ramp_damage_pct_per_5s())
 	if step <= 0.0:
@@ -454,13 +458,15 @@ func _show_game_over() -> void:
 	await get_tree().create_timer(2.0, true, false, true).timeout
 	_go_bg.modulate.a = 0.0
 	_go_panel.modulate.a = 0.0
-	_go_label.text = "Game Over\nBiscuits Collected: %d" % GameState.get_run_biscuits_collected()
+	_go_label.text = "Game Over\nBiscuits Collected: %d" % \
+		GameState.get_run_biscuits_collected()
 	_go_layer.visible = true
 	get_tree().paused = true
-	var t := _go_layer.create_tween()
+	var t: Tween = _go_layer.create_tween()
 	t.set_process_mode(Tween.TWEEN_PROCESS_IDLE)
 	t.tween_property(_go_bg, "modulate:a", 1.0, 0.35).set_trans(Tween.TRANS_SINE)
-	t.parallel().tween_property(_go_panel, "modulate:a", 1.0, 0.35).set_trans(Tween.TRANS_SINE)
+	t.parallel().tween_property(_go_panel, "modulate:a", 1.0, 0.35)\
+		.set_trans(Tween.TRANS_SINE)
 
 func _ensure_game_over_ui() -> void:
 	if _go_layer:
@@ -476,13 +482,13 @@ func _ensure_game_over_ui() -> void:
 	_go_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_go_layer.add_child(_go_bg)
 
-	var center := CenterContainer.new()
+	var center: CenterContainer = CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	center.mouse_filter = Control.MOUSE_FILTER_STOP
 	_go_layer.add_child(center)
 
 	_go_panel = PanelContainer.new()
-	var sb := StyleBoxFlat.new()
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
 	sb.bg_color = Color(0.08,0.1,0.14,1)
 	sb.set_border_width_all(2)
 	sb.border_color = Color(0.25,0.3,0.36,1)
@@ -492,7 +498,7 @@ func _ensure_game_over_ui() -> void:
 	_go_panel.custom_minimum_size = Vector2(520, 240)
 	center.add_child(_go_panel)
 
-	var vb := VBoxContainer.new()
+	var vb: VBoxContainer = VBoxContainer.new()
 	vb.alignment = BoxContainer.ALIGNMENT_CENTER
 	vb.add_theme_constant_override("separation", 16)
 	_go_panel.add_child(vb)

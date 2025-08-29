@@ -22,6 +22,7 @@ extends CharacterBody2D
 @export var archetype_key: String = ""
 @export var debug_archetype_logs: bool = false
 @export var debug_spawn_logs: bool = true
+@export var biscuit_pickup_scene: PackedScene
 
 # -----------------------------------------------------------------------------
 # Node refs & runtime state
@@ -404,7 +405,8 @@ func _use_def(def: Dictionary) -> void:
 	var php_w_add: float = float(def.get("player_hp_weight_add", 0.0))
 	var stick_add: float = float(
 		def.get("current_target_stickiness_add", 0.0))
-	var atk_radius_add: float = float(def.get("manual_attack_radius_add", 0.0))
+	var atk_radius_add: float = float(
+		def.get("manual_attack_radius_add", 0.0))
 	var stop_add: float = float(def.get("stop_distance_add", 0.0))
 	var contact_mult: float = float(def.get("contact_interval_mult", 1.0))
 	var drop_mult: float = float(def.get("biscuit_drop_mult", 1.0))
@@ -590,6 +592,27 @@ func _play_once(kind: String, max_time: float = -1.0) -> void:
 	_oneshot_playing = false
 	_update_move_idle(velocity.normalized())
 
+# -----------------------------------------------------------------------------
+# Biscuit drop
+# -----------------------------------------------------------------------------
+func _try_drop_biscuit() -> void:
+	var chance: float = clamp(0.25 * _drop_mult, 0.0, 1.0)
+	if biscuit_pickup_scene == null:
+		return
+	if randf() <= chance:
+		var root: Node = get_tree().current_scene
+		var parent: Node = root.get_node_or_null("Pickups")
+		if parent == null:
+			parent = root
+		var pickup: Node2D = biscuit_pickup_scene.instantiate() as Node2D
+		parent.add_child(pickup)
+		pickup.global_position = global_position
+		if pickup.has_method("init_with_value"):
+			pickup.init_with_value(1)
+
+# -----------------------------------------------------------------------------
+# Death
+# -----------------------------------------------------------------------------
 func _die() -> void:
 	if _dead:
 		return
@@ -601,6 +624,7 @@ func _die() -> void:
 	collision_mask = 0
 	if contact:
 		contact.monitoring = false
+	_try_drop_biscuit()
 	if _has_anim("die"):
 		var nm: String = String(_anim_map.get("die"))
 		if _sprite != null and _sprite.sprite_frames != null:

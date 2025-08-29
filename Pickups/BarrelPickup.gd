@@ -1,8 +1,14 @@
 extends Area2D
 class_name BarrelPickup
 
+# -----------------------------------------------------------------------------
+# Signals
+# -----------------------------------------------------------------------------
 signal collected(value:int)
 
+# -----------------------------------------------------------------------------
+# Exports
+# -----------------------------------------------------------------------------
 @export var max_speed:float = 560.0
 @export var accel:float = 1200.0
 @export var magnet_radius:float = 160.0
@@ -11,70 +17,110 @@ signal collected(value:int)
 @export var fade_time:float = 0.5
 @export var auto_rotate:bool = true
 
-var value:int = 1
-
 @export var sfx_collect_path:NodePath
 @export var sfx_spawn_path:NodePath
 @export var anim_player_path:NodePath
 
-# --- Upgrade-driven baselines ---
 @export var base_magnet_radius: float = 160.0
 @export var magnet_radius_per_level: float = 120.0
 @export var base_max_speed: float = 560.0
-@export var max_speed_per_level: float = 40.0  
+@export var max_speed_per_level: float = 40.0
 
+# -----------------------------------------------------------------------------
+# Runtime state
+# -----------------------------------------------------------------------------
+var value:int = 1
 var _vel:Vector2 = Vector2.ZERO
 var _player:Node2D
 var _age:float = 0.0
 var _fading:bool = false
 var _spawned:bool = false
+var _gs: Node = null
 
-@onready var _shape:CollisionShape2D = $CollisionShape2D if has_node("CollisionShape2D") else null
-@onready var _sprite:CanvasItem = $Sprite2D if has_node("Sprite2D") else self
-@onready var _ap:AnimationPlayer = get_node_or_null(anim_player_path) if anim_player_path != NodePath() else get_node_or_null("AnimationPlayer")
-@onready var _sfx_collect:AudioStreamPlayer = get_node_or_null(sfx_collect_path) if sfx_collect_path != NodePath() else get_node_or_null("SFX_Collect")
-@onready var _sfx_spawn:AudioStreamPlayer = get_node_or_null(sfx_spawn_path) if sfx_spawn_path != NodePath() else get_node_or_null("SFX_Spawn")
+# -----------------------------------------------------------------------------
+# Node refs
+# -----------------------------------------------------------------------------
+@onready var _shape:CollisionShape2D = \
+	$CollisionShape2D if has_node("CollisionShape2D") else null
+@onready var _sprite:CanvasItem = \
+	$Sprite2D if has_node("Sprite2D") else self
+@onready var _ap:AnimationPlayer = \
+	get_node_or_null(anim_player_path) if anim_player_path != NodePath() \
+	else get_node_or_null("AnimationPlayer")
+@onready var _sfx_collect:AudioStreamPlayer = \
+	get_node_or_null(sfx_collect_path) if sfx_collect_path != NodePath() \
+	else get_node_or_null("SFX_Collect")
+@onready var _sfx_spawn:AudioStreamPlayer = \
+	get_node_or_null(sfx_spawn_path) if sfx_spawn_path != NodePath() \
+	else get_node_or_null("SFX_Spawn")
+@onready var _magnet_area:Area2D = get_node_or_null("MagnetArea") as Area2D
+@onready var _magnet_shape:CollisionShape2D = \
+	(_magnet_area.get_node("CollisionShape2D") as CollisionShape2D) \
+	if _magnet_area and _magnet_area.has_node("CollisionShape2D") else null
 
+# -----------------------------------------------------------------------------
+# API
+# -----------------------------------------------------------------------------
 func init_with_value(v:int) -> BarrelPickup:
-	if v < 1:
-		value = 1
-	else:
-		value = v
+	value = 1 if v < 1 else v
 	return self
 
+# -----------------------------------------------------------------------------
+# Lifecycle
+# -----------------------------------------------------------------------------
 func _ready() -> void:
 	monitoring = true
 	monitorable = true
 	if not _spawned:
 		_spawn_pop()
 
+	_gs = get_node_or_null("/root/GameState")
+
 	var players := get_tree().get_nodes_in_group("player")
 	if players.size() > 0:
 		_player = players[0] as Node2D
 
-	# Apply current upgrade at spawn and subscribe for future changes
 	_apply_pickup_upgrade()
-	if Engine.has_singleton("GameState"):
-		GameState.upgrades_changed.connect(_on_upgrade_changed)
+
+	if _gs and not _gs.upgrades_changed.is_connected(_on_upgrades_changed):
+		_gs.upgrades_changed.connect(_on_upgrades_changed)
 
 	body_entered.connect(_on_body_entered)
 	area_entered.connect(_on_area_entered)
 
-func _on_upgrade_changed(key:String, _lvl:int) -> void:
-	# Only care about the pickup upgrade for biscuits
-	if key == "pickup":
-		_apply_pickup_upgrade()
+# -----------------------------------------------------------------------------
+# Upgrades application
+# -----------------------------------------------------------------------------
+func _on_upgrades_changed() -> void:
+	_apply_pickup_upgrade()
 
 func _apply_pickup_upgrade() -> void:
 	var lvl:int = 0
-	if Engine.has_singleton("GameState"):
-		lvl = GameState.get_upgrade("pickup", 0)
+	if _gs and _gs.has_method("get_upgrade"):
+		lvl = int(_gs.get_upgrade("pickup", 0))
 
-	# Radius grows with level
-	magnet_radius = base_magnet_radius + magnet_radius_per_level * float(lvl)
+	magnet_radius = base_magnet_radius + \
+		magnet_radius_per_level * float(lvl)
 
-	max_speed = base_max_speed + max_speed_per_level * float(lvl)
+	max_speed = base_max_speed + \
+		max_speed_per_level * float(lvl)
 
+	_apply_magnet_shape_from_radius()
+
+func _apply_magnet_shape_from_radius() -> void:
+	if _magnet_shape == null or _magnet_shape.shape == null:
+		return
+	var sh := _magnet_shape.shape
+	if sh is CircleShape2D:
+		if sh.resource_local_to_scene == false:
+			sh = sh.duplicate()
+			sh.resource_local_to_scene = true
+			_magnet_shape.shape = sh
+		sh.radius = magnet_radius
+
+# -----------------------------------------------------------------------------
+# Physics
+# -----------------------------------------------------------------------------
 func _physics_process(delta:float) -> void:
 	if _fading:
 		return
@@ -100,13 +146,18 @@ func _physics_process(delta:float) -> void:
 		var jitter := Vector2(randf() - 0.5, randf() - 0.5)
 		if jitter.length() > 0.0:
 			jitter = jitter.normalized()
-		_vel = _vel.move_toward(jitter * idle_drift_speed, accel * 0.25 * delta)
+		_vel = _vel.move_toward(
+			jitter * idle_drift_speed, accel * 0.25 * delta
+		)
 
 	global_position += _vel * delta
 
 	if auto_rotate and _vel.length() > 1.0:
 		rotation = _vel.angle()
 
+# -----------------------------------------------------------------------------
+# Signals -> collection
+# -----------------------------------------------------------------------------
 func _on_body_entered(b:Node) -> void:
 	_try_collect(b)
 
@@ -119,7 +170,6 @@ func _try_collect(other:Node) -> void:
 		is_player = true
 	elif other.get_parent() and other.get_parent().is_in_group("player"):
 		is_player = true
-
 	if is_player:
 		_collect()
 
@@ -128,8 +178,8 @@ func _collect() -> void:
 		return
 	emit_signal("collected", value)
 
-	if Engine.has_singleton("GameState"):
-		GameState.add_biscuits(value)
+	if _gs and _gs.has_method("add_biscuits"):
+		_gs.add_biscuits(value)
 	else:
 		var scene := get_tree().current_scene
 		if scene and scene.has_method("add_biscuits"):
@@ -143,14 +193,14 @@ func _collect() -> void:
 	monitoring = false
 	_start_fade(true)
 
+# -----------------------------------------------------------------------------
+# Fade and spawn juice
+# -----------------------------------------------------------------------------
 func _start_fade(fast:bool=false) -> void:
 	_fading = true
 	var t:float = fade_time
 	if fast:
-		if fade_time * 0.5 > 0.12:
-			t = fade_time * 0.5
-		else:
-			t = 0.12
+		t = fade_time * 0.5 if fade_time * 0.5 > 0.12 else 0.12
 
 	if _ap and _ap.has_animation("fade"):
 		_ap.play("fade")
