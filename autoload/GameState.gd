@@ -23,10 +23,13 @@ enum Phase { PREP, WAVE, GAME_OVER }
 @export var enemy_hp_per_wave_pct: float = 0.15
 @export var enemy_dmg_per_wave_pct: float = 0.15
 @export var enemy_speed_per_wave_pct: float = 0.02
+@export var knockback_out_base: float = 3.0
+
 
 # -----------------------------------------------------------------------------
 # Runtime state
 # -----------------------------------------------------------------------------
+var _knockback_out_bonus: float = 0.0
 var biscuits:int = 0
 var biscuits_collected:int = 0
 var wave:int = 1
@@ -65,7 +68,7 @@ const STAT_BASE := {
 	"enemy_speed_mult": 1.0,
 	"explosion_damage_mult": 1.0,
 	"pierce_add": 0.0,
-	"knockback_add": 1.0,
+	"knockback_add": 30.0,
 	"ramp_damage_pct_per_5s": 0.0,
 	"attack_speed_pct": 0.0,
 	"attack_speed_while_still_pct": 0.0,
@@ -580,3 +583,9 @@ func can_level(upgrade_key:String) -> bool:
 
 func get_run_biscuits_collected() -> int:
 	return biscuits_collected
+
+func get_knockback_out_mult() -> float:
+	return max(0.0, knockback_out_base + _knockback_out_bonus)
+
+func add_knockback_bonus(x: float) -> void:
+	_knockback_out_bonus += x

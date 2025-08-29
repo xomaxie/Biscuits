@@ -1,6 +1,11 @@
 extends CharacterBody2D
 
 # -----------------------------------------------------------------------------
+# Enums
+# -----------------------------------------------------------------------------
+enum KnockMode { PROJECTILE_DIR, BACK_ONLY, BACK_CLAMP }
+
+# -----------------------------------------------------------------------------
 # Exports
 # -----------------------------------------------------------------------------
 @export var speed: float = 80.0
@@ -23,18 +28,22 @@ extends CharacterBody2D
 @export var debug_archetype_logs: bool = false
 @export var debug_spawn_logs: bool = true
 @export var biscuit_pickup_scene: PackedScene
+@export var knockback_friction: float = 700
+@export var knockback_resistance: float = 0.0
+@export var knockback_mode: KnockMode = KnockMode.BACK_CLAMP
+
+
+
 
 # -----------------------------------------------------------------------------
 # Node refs & runtime state
 # -----------------------------------------------------------------------------
 @onready var contact: Area2D = get_node_or_null("Contact") as Area2D
 @onready var _visual: CanvasItem = _find_visual()
-
 var _target: Node2D = null
 var _nexus: Node2D = null
 var _player: Node2D = null
 var _gs: Node = null
-
 var _touching_nexus: bool = false
 var _touching_player: bool = false
 var _contact_accum: float = 0.0
@@ -46,6 +55,8 @@ var _base_flash_time: float = 0.06
 var _drop_mult: float = 1.0
 var _dead: bool = false
 var _anim_gen: int = 0
+var _kb_vel: Vector2 = Vector2.ZERO
+var _base_move_dir: Vector2 = Vector2.ZERO
 
 # -----------------------------------------------------------------------------
 # Sprite/animation helpers
@@ -76,15 +87,12 @@ func set_target(t: Node2D) -> void:
 func _ready() -> void:
 	add_to_group("enemies")
 	_gs = get_node_or_null("/root/GameState")
-
 	if _target == null and target_path != NodePath(""):
 		_target = get_node_or_null(target_path) as Node2D
-
 	_nexus = _first_in_group("nexus")
 	if _target == null and _nexus != null:
 		_target = _nexus
 	_player = _first_in_group("player")
-
 	if contact != null:
 		contact.monitoring = true
 		contact.monitorable = true
@@ -92,7 +100,6 @@ func _ready() -> void:
 			contact.body_entered.connect(_on_contact_body_entered)
 		if not contact.body_exited.is_connected(_on_contact_body_exited):
 			contact.body_exited.connect(_on_contact_body_exited)
-
 	_base_flash_time = hit_flash_time
 	_apply_global_scalers()
 	_apply_archetype_json()
@@ -116,12 +123,23 @@ func _physics_process(delta: float) -> void:
 		var dist: float = _dist_to(_target)
 		if dist > stop_distance:
 			dir = global_position.direction_to(_target.global_position)
-		velocity = dir * speed
-		move_and_slide()
+
+	if dir.length_squared() > 1e-6:
+		_base_move_dir = dir.normalized()
+
+	var base_vel: Vector2 = dir * speed
+	var total_vel: Vector2 = base_vel + _kb_vel
+	velocity = total_vel
+	move_and_slide()
+
+	if _kb_vel.length_squared() > 1e-6:
+		var dec: float = knockback_friction * delta
+		var len: float = _kb_vel.length()
+		var new_len: float = max(0.0, len - dec)
+		_kb_vel = _kb_vel.normalized() * new_len if new_len > 0.0 else Vector2.ZERO
 
 	_update_visual_orientation(dir)
 	_update_move_idle(dir)
-
 	if _pending_damage > 0:
 		var applied: int = min(_pending_damage, hp)
 		hp -= applied
@@ -134,11 +152,32 @@ func _physics_process(delta: float) -> void:
 		if hp <= 0:
 			_die()
 			return
-
 	_contact_accum += delta
 	if _reached(_contact_accum, contact_interval):
 		_contact_accum = 0.0
 		_apply_contact_damage()
+
+# -----------------------------------------------------------------------------
+# External forces
+# -----------------------------------------------------------------------------
+func apply_knockback(force: Vector2) -> void:
+	if _dead:
+		return
+	var mult: float = max(0.0, 1.0 - knockback_resistance)
+
+	match knockback_mode:
+		KnockMode.PROJECTILE_DIR:
+			_kb_vel += force * mult
+
+		KnockMode.BACK_ONLY:
+			var mag: float = force.length()
+			var back_dir: Vector2 = _pick_back_dir()
+			_kb_vel += back_dir * mag * mult
+
+		KnockMode.BACK_CLAMP:
+			var back_dir: Vector2 = _pick_back_dir()
+			var comp: float = max(0.0, force.dot(back_dir))
+			_kb_vel += back_dir * comp * mult
 
 # -----------------------------------------------------------------------------
 # Retargeting
@@ -146,17 +185,14 @@ func _physics_process(delta: float) -> void:
 func _reselect_target() -> void:
 	var best: Node2D = _nexus
 	var best_score: float = -1e9
-
 	if is_instance_valid(_nexus):
 		best = _nexus
 		best_score = _score_target(_nexus)
-
 	if is_instance_valid(_player):
 		var s_p: float = _score_target(_player)
 		if s_p > best_score:
 			best = _player
 			best_score = s_p
-
 	if best != null and best != _target:
 		_target = best
 
@@ -165,7 +201,6 @@ func _score_target(t: Node2D) -> float:
 		return -1e9
 	var d: float = max(1.0, _dist_to(t))
 	var score: float = (1.0 / d) * distance_weight
-
 	if t == _player:
 		if d <= prefer_player_within:
 			score += player_proximity_bonus
@@ -176,10 +211,8 @@ func _score_target(t: Node2D) -> float:
 			hp_ratio = float(ph) / float(pm)
 		hp_ratio = clamp(hp_ratio, 0.0, 1.0)
 		score += (1.0 - hp_ratio) * player_hp_weight
-
 	if t == _target:
 		score += current_target_stickiness
-
 	return score
 
 # -----------------------------------------------------------------------------
@@ -196,17 +229,14 @@ func take_hit(dmg: int) -> void:
 func _apply_contact_damage() -> void:
 	var player_overlap: bool = false
 	var nexus_overlap: bool = false
-
 	if is_instance_valid(_player):
 		var dp: float = _dist_to(_player)
 		if _touching_player or dp <= manual_attack_radius:
 			player_overlap = true
-
 	if is_instance_valid(_nexus):
 		var dn: float = _dist_to(_nexus)
 		if _touching_nexus or dn <= manual_attack_radius:
 			nexus_overlap = true
-
 	if player_overlap and nexus_overlap:
 		if _score_target(_player) >= _score_target(_nexus):
 			_damage_player()
@@ -368,7 +398,6 @@ func _apply_archetype_json() -> void:
 		_ensure_sprite_node()
 		_start_default_anim()
 		return
-
 	var db: Node = _db()
 	if db == null:
 		if debug_archetype_logs:
@@ -380,11 +409,9 @@ func _apply_archetype_json() -> void:
 		_ensure_sprite_node()
 		_start_default_anim()
 		return
-
 	var def: Dictionary = db.get_def(archetype_key)
 	_use_def(def)
 	_apply_sprite_from_def(def)
-
 	if debug_archetype_logs:
 		print("[Enemy#", str(get_instance_id()), "] applied key=",
 			archetype_key, " speed=", str(speed), " hp=",
@@ -413,11 +440,9 @@ func _use_def(def: Dictionary) -> void:
 	var flash_mult: float = float(def.get("hit_flash_time_mult", 1.0))
 	var tint_s: String = String(def.get("tint", ""))
 	var flash_s: String = String(def.get("hit_flash_tint", ""))
-
 	speed *= speed_mult
 	hp = max(1, int(round(float(hp) * hp_mult)))
 	touch_damage = int(round(float(touch_damage) * dmg_mult))
-
 	retarget_interval = max(0.05, retarget_interval + retarget_add)
 	if prefer_override >= 0.0:
 		prefer_player_within = prefer_override
@@ -425,19 +450,15 @@ func _use_def(def: Dictionary) -> void:
 	distance_weight += dist_w_add
 	player_hp_weight += php_w_add
 	current_target_stickiness += stick_add
-
 	manual_attack_radius = max(0.0, manual_attack_radius + atk_radius_add)
 	stop_distance = max(0.0, stop_distance + stop_add)
 	contact_interval = max(0.05, contact_interval * contact_mult)
-
 	_drop_mult = max(0.1, drop_mult)
 	hit_flash_time = max(0.01, _base_flash_time * flash_mult)
-
 	if flash_s != "":
 		_flash_color = Color(flash_s)
 	else:
 		_flash_color = Color(1, 0, 0, 1)
-
 	if is_instance_valid(_visual) and tint_s != "":
 		_visual.self_modulate = Color(tint_s)
 
@@ -449,22 +470,17 @@ func _apply_sprite_from_def(def: Dictionary) -> void:
 		_ensure_sprite_node()
 		_start_default_anim()
 		return
-
 	var sdef: Dictionary = def["sprite"]
 	_faces_right = bool(sdef.get("faces_right", true))
 	_anim_speed_base = float(sdef.get("speed_scale", 1.0))
 	var scale_mult: float = float(sdef.get("scale", 1.0))
-
 	if sdef.has("anim_map") and typeof(sdef["anim_map"]) == TYPE_DICTIONARY:
 		for k in sdef["anim_map"].keys():
 			_anim_map[String(k)] = String(sdef["anim_map"][k])
-
 	var default_anim: String = String(
 		sdef.get("default_anim", _anim_map.get("move", "Run"))
 	)
-
 	_ensure_sprite_node()
-
 	if sdef.has("frames"):
 		var frames_path: String = String(sdef["frames"])
 		var frames: SpriteFrames = ResourceLoader.load(frames_path) \
@@ -473,10 +489,8 @@ func _apply_sprite_from_def(def: Dictionary) -> void:
 			_sprite.sprite_frames = frames
 		else:
 			push_warning("Enemy: could not load SpriteFrames at " + frames_path)
-
 	if is_instance_valid(_visual) and _visual != self:
 		_visual.scale = Vector2.ONE * scale_mult
-
 	if _sprite != null and _sprite.sprite_frames != null:
 		var anim_to_play: String = default_anim
 		if not _sprite.sprite_frames.has_animation(anim_to_play):
@@ -620,6 +634,7 @@ func _die() -> void:
 	_anim_gen += 1
 	_oneshot_playing = false
 	velocity = Vector2.ZERO
+	_kb_vel = Vector2.ZERO
 	collision_layer = 0
 	collision_mask = 0
 	if contact:
@@ -681,3 +696,8 @@ func _reached(accum: float, period: float) -> bool:
 
 func get_drop_multiplier() -> float:
 	return _drop_mult
+
+func _pick_back_dir() -> Vector2:
+	if _base_move_dir.length_squared() > 1e-6:
+		return -_base_move_dir
+	return Vector2((randi() & 1) * 2 - 1, 0.0).normalized()

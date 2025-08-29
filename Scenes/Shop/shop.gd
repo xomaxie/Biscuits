@@ -27,6 +27,7 @@ var _reroll_cost : int           = 2
 var _rng         : RandomNumberGenerator = RandomNumberGenerator.new()
 
 var _card_ui: Array = []
+var _has_opened: bool = false
 
 # -----------------------------------------------------------------------------
 # Stats card refs
@@ -119,6 +120,8 @@ func _ready() -> void:
 	resized.connect(_on_resized)
 	_on_resized()
 
+	visibility_changed.connect(_on_visibility_changed)
+
 func _on_db_ready() -> void:
 	OFFER_KEYS = DB.keys_sorted()
 	_generate_if_needed()
@@ -129,6 +132,21 @@ func _first_build() -> void:
 	_generate_if_needed()
 	_render_offers()
 	_refresh_biscuits()
+
+# -----------------------------------------------------------------------------
+# Visibility → treat as shop opening
+# -----------------------------------------------------------------------------
+func _on_visibility_changed() -> void:
+	if visible:
+		if _has_opened:
+			_reseed_unlocked_for_new_open(true)
+		_has_opened = true
+
+# -----------------------------------------------------------------------------
+# Public entry for game flow (optional external call)
+# -----------------------------------------------------------------------------
+func on_shop_open(reset_reroll_cost: bool = true) -> void:
+	_reseed_unlocked_for_new_open(reset_reroll_cost)
 
 # -----------------------------------------------------------------------------
 # Node binding
@@ -286,6 +304,41 @@ func _generate_if_needed() -> void:
 	_offers = _roll_offers(SLOTS)
 
 # -----------------------------------------------------------------------------
+# New-shop reseed preserving locked slots
+# -----------------------------------------------------------------------------
+func _reseed_unlocked_for_new_open(reset_reroll_cost: bool) -> void:
+	if reset_reroll_cost:
+		_reroll_cost = 2
+
+	var keep: Dictionary = {}
+	var exclude: Dictionary = {}
+	var missing: int = 0
+
+	for i in range(SLOTS):
+		if i < _offers.size() and _slot_locked[i]:
+			keep[i] = _offers[i]
+			exclude[_offers[i]] = true
+		else:
+			missing += 1
+
+	if _offers.size() != SLOTS:
+		_offers.resize(SLOTS)
+
+	if missing > 0:
+		var new_picks := _roll_offers_excluding(missing, exclude)
+		var j := 0
+		for i in range(SLOTS):
+			if keep.has(i):
+				_offers[i] = String(keep[i])
+			else:
+				if j < new_picks.size():
+					_offers[i] = new_picks[j]
+					j += 1
+
+	_render_offers()
+	_refresh_biscuits()
+
+# -----------------------------------------------------------------------------
 # Offer rolling (rarity, type bias, luck-aware)
 # -----------------------------------------------------------------------------
 func _roll_offers(n:int) -> Array[String]:
@@ -316,6 +369,49 @@ func _roll_offers(n:int) -> Array[String]:
 		if idx < 0:
 			break
 		picks.append(pool[idx])
+		chosen[idx] = true
+	return picks
+
+func _roll_offers_excluding(
+	n:int,
+	exclude: Dictionary
+) -> Array[String]:
+	var pool: Array[String] = []
+	if DB and DB.is_ready():
+		pool = DB.keys_sorted()
+	else:
+		pool = OFFER_KEYS.duplicate()
+	if pool.is_empty():
+		return []
+
+	var filt: Array[String] = []
+	for k in pool:
+		if exclude.has(k):
+			continue
+		filt.append(k)
+
+	if filt.is_empty():
+		return []
+
+	var weights: Array[float] = []
+	weights.resize(filt.size())
+	for i in filt.size():
+		var key := filt[i]
+		if not _is_entry_available(key):
+			weights[i] = 0.0
+			continue
+		var def: Dictionary = {}
+		if DB and DB.is_ready() and DB.has(key):
+			def = DB.get_entry(key)
+		weights[i] = _entry_weight(def)
+
+	var picks: Array[String] = []
+	var chosen: Dictionary = {}
+	for _i in n:
+		var idx := _weighted_pick(filt, weights, chosen)
+		if idx < 0:
+			break
+		picks.append(filt[idx])
 		chosen[idx] = true
 	return picks
 
@@ -573,12 +669,19 @@ func _on_buy(index:int) -> void:
 	if not GameState.buy_entry(key, lvl):
 		return
 	var was_locked: bool = _slot_locked[index]
-	if not _slot_locked[index] or was_locked:
-		var replacement: Array[String] = _roll_offers(1)
+	if not was_locked:
+		var replacement: Array[String] = _roll_offers_excluding(
+			1, { _offers[index]: true }
+		)
 		if replacement.size() > 0:
 			_offers[index] = replacement[0]
-	if was_locked:
+	else:
 		_slot_locked[index] = false
+		var repl2: Array[String] = _roll_offers_excluding(
+			1, {}
+		)
+		if repl2.size() > 0:
+			_offers[index] = repl2[0]
 	_render_offers()
 	_refresh_biscuits()
 
@@ -586,11 +689,16 @@ func _on_reroll() -> void:
 	var cost := _effective_reroll_cost()
 	if not GameState.spend_biscuits(cost):
 		return
+	var exclude: Dictionary = {}
+	for i in range(SLOTS):
+		if _slot_locked[i] and i < _offers.size():
+			exclude[_offers[i]] = true
 	for i in range(_offers.size()):
 		if not _slot_locked[i]:
-			var repl: Array[String] = _roll_offers(1)
+			var repl: Array[String] = _roll_offers_excluding(1, exclude)
 			if repl.size() > 0:
 				_offers[i] = repl[0]
+				exclude[_offers[i]] = true
 	_reroll_cost += 1
 	_render_offers()
 	_refresh_biscuits()

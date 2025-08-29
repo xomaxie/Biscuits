@@ -18,7 +18,7 @@ signal returned(weapon: Node)
 @export var max_out_distance: float = 520.0
 @export var return_snap_distance: float = 18.0
 @export var spin_speed_deg: float = 540.0
-@export var return_turn_rate_deg: float = 300
+@export var return_turn_rate_deg: float = 300.0
 @export var return_speed_mult: float = 1.0
 @export var debug_boomerang_speed: bool = false
 
@@ -134,10 +134,16 @@ func _try_hit(node: Node) -> void:
 	if bag.has(id):
 		return
 	node.call("take_hit", damage)
-	if knockback > 0.0 and node is CharacterBody2D:
-		var body: CharacterBody2D = node as CharacterBody2D
-		var dir: Vector2 = (body.global_position - global_position).normalized()
-		body.velocity += dir * knockback
+	if knockback > 0.0:
+		var n2d: Node2D = node as Node2D
+		if n2d:
+			var dir: Vector2 = (n2d.global_position - global_position).normalized()
+			var force: Vector2 = dir * knockback * _knock_mult()
+			if node.has_method("apply_knockback"):
+				node.call("apply_knockback", force)
+			elif node is CharacterBody2D:
+				var body: CharacterBody2D = node as CharacterBody2D
+				body.velocity += force
 	bag[id] = true
 
 # -----------------------------------------------------------------------------
@@ -150,3 +156,12 @@ func _on_area_entered(area: Area2D) -> void:
 	var owner_node: Node = area.get_parent()
 	if owner_node != null and owner_node.has_method("take_hit"):
 		_try_hit(owner_node)
+
+# -----------------------------------------------------------------------------
+# Knockback helper
+# -----------------------------------------------------------------------------
+func _knock_mult() -> float:
+	var gs: Node = get_node_or_null("/root/GameState")
+	if gs and gs.has_method("get_knockback_out_mult"):
+		return float(gs.get_knockback_out_mult())
+	return 1.0
