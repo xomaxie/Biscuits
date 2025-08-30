@@ -14,7 +14,8 @@ config/name="Biscuit"
 run/main_scene="uid://c207eh03jhkby"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 boot_splash/image="uid://ctf7ea5h4o35f"
-config/icon="res://icon.svg"
+config/icon="uid://cxllsadhbc75m"
+config/windows_native_icon="res://BiscuitBuscuit.ico"
 
 [audio]
 
@@ -75,3 +76,4 @@ pause={
 textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.135316, 0.345281, 0.269824, 1)
