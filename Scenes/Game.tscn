@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=4 uid="uid://c8it8ws3qx32f"]
+[gd_scene load_steps=31 format=4 uid="uid://c8it8ws3qx32f"]
 
 [ext_resource type="Script" uid="uid://cyf26hoy0a1wi" path="res://Scenes/game.gd" id="1_b2bpf"]
 [ext_resource type="TileSet" uid="uid://c8x3l763koufi" path="res://Scenes/Game.tres" id="2_3so38"]
@@ -8,9 +8,11 @@
 [ext_resource type="Texture2D" uid="uid://btibyuephsgbi" path="res://Tilesets/Destructible Objects Sprite Sheet.png" id="4_bf53h"]
 [ext_resource type="Theme" uid="uid://cgyexe6foeoie" path="res://Theme.tres" id="5_bf53h"]
 [ext_resource type="PackedScene" uid="uid://dfhos6dc1q2om" path="res://Scenes/NPCs/Enemy.tscn" id="7_71axn"]
+[ext_resource type="Script" uid="uid://b226opng7l4xe" path="res://Scenes/camera_2d.gd" id="7_acvyw"]
 [ext_resource type="PackedScene" uid="uid://c4mn6wxav531b" path="res://Pickups/BarrelSpawner.tscn" id="9_71axn"]
 [ext_resource type="PackedScene" uid="uid://dfocspoa7qtk7" path="res://Pickups/BiscuitBarrel.tscn" id="10_dahhg"]
 [ext_resource type="PackedScene" uid="uid://q7dhpi6lm4tl" path="res://Scenes/Shop/Shop.tscn" id="11_dahhg"]
+[ext_resource type="PackedScene" uid="uid://qn73y1sibsj2" path="res://MainMenu/Pausemenu.tscn" id="11_wxwew"]
 [ext_resource type="Texture2D" uid="uid://da53jhegnx1fm" path="res://Tilesets/cH87+8.png" id="12_3so38"]
 [ext_resource type="Script" uid="uid://b54cs8xofqq7m" path="res://Scenes/canvas_layer.gd" id="13_3cx6b"]
 
@@ -120,8 +122,17 @@ radius = 64.0
 [node name="Game" type="Node2D"]
 y_sort_enabled = true
 script = ExtResource("1_b2bpf")
+prep_duration = null
+early_wave_count = null
+early_wave_duration = null
+late_wave_duration = null
+wave_duration = null
+nexus_heal_per_biscuit_pct = null
+nexus_heal_enabled = null
+nexus_heal_debug = null
 debug_start_with_biscuits = true
 debug_biscuit_amount = 25
+music_fade_sec = null
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 script = ExtResource("13_3cx6b")
@@ -168,7 +179,7 @@ y_sort_enabled = true
 position = Vector2(-4.76837e-07, -1)
 scale = Vector2(5, 5)
 sprite_frames = SubResource("SpriteFrames_3so38")
-animation = &"Idle"
+animation = &"OnHit"
 offset = Vector2(1.685, -8.49)
 
 [node name="DamageZone" type="Area2D" parent="Nexus"]
@@ -186,6 +197,7 @@ move_speed = 280.0
 max_hp = 50
 
 [node name="Camera2D" type="Camera2D" parent="Player"]
+script = ExtResource("7_acvyw")
 
 [node name="BarrelSpawner" parent="." instance=ExtResource("9_71axn")]
 visible = false
@@ -208,6 +220,8 @@ shape = SubResource("CircleShape2D_3cx6b")
 [node name="Enemies" type="Node2D" parent="."]
 
 [node name="UI" type="CanvasLayer" parent="."]
+
+[node name="PauseMenu" parent="UI" instance=ExtResource("11_wxwew")]
 
 [node name="Shop" parent="UI" instance=ExtResource("11_dahhg")]
 process_mode = 3

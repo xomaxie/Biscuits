@@ -45,7 +45,7 @@ const TIPS_BBCODE := """
   the Nexus when it’s threatened.
 • Barrels drip and burst biscuits; farther from the Nexus can mean
   higher biscuit value.
-• Lifesteal heals from actual damage dealt; partial amounts stack
+• Lifesteal heals from damage dealt; partial amounts stack
   until they become 1 HP.
 • Regen heals every second; Dodge can save you from big hits.
 """

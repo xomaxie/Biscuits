@@ -18,6 +18,7 @@ extends Node2D
 @onready var shop_ui: ShopUI = $UI/Shop
 @onready var player: Node = $Player
 @onready var ui_root: CanvasLayer = $UI
+@onready var pause_menu: Control = $UI/PauseMenu
 
 # -----------------------------------------------------------------------------
 # Tunables
@@ -32,7 +33,7 @@ extends Node2D
 @export var nexus_heal_debug: bool = false
 @export var debug_start_with_biscuits: bool = false
 @export var debug_biscuit_amount: int = 10000
-@export var music_fade_sec: float = 5
+@export var music_fade_sec: float = 5.0
 
 # -----------------------------------------------------------------------------
 # Runtime
@@ -47,6 +48,9 @@ var _ramp_timer: Timer
 # Lifecycle
 # -----------------------------------------------------------------------------
 func _ready() -> void:
+	pause_menu.visible = false
+	get_tree().paused = false
+
 	shop_ui.hide()
 	shop_ui.continue_pressed.connect(_on_shop_continue)
 
@@ -98,8 +102,6 @@ func _ready() -> void:
 	GameState.run_ended.connect(_on_run_ended)
 
 	_mm = get_node_or_null("/root/MusicManager")
-	if _mm:
-		_mm.call("play_run_start", music_fade_sec)
 
 	GameState.start_run()
 	_enter_prep()
@@ -132,7 +134,7 @@ func _start_wave() -> void:
 	_ramp_timer.start()
 	var dur: float = _get_wave_duration(GameState.wave)
 	wave_timer.start(dur)
-	if _mm:
+	if _mm and _mm.has_method("unduck_music"):
 		_mm.call("unduck_music", 0.1)
 
 func _enter_shop() -> void:
@@ -154,7 +156,7 @@ func _enter_shop() -> void:
 			else "Shop — Spend your biscuits"
 		)
 	shop_ui.show()
-	if _mm:
+	if _mm and _mm.has_method("duck_music"):
 		_mm.call("duck_music", music_fade_sec)
 
 func _on_prep_timeout() -> void:
@@ -226,25 +228,32 @@ func _refresh_timer_ui() -> void:
 		GameState.Phase.GAME_OVER:
 			wave_label.text = "Game Over"
 
+# -----------------------------------------------------------------------------
+# GameState events
+# -----------------------------------------------------------------------------
 func _on_biscuits_changed(total: int, delta: int) -> void:
 	if biscuit_label:
 		biscuit_label.text = "Biscuits: %d" % total
-	if nexus_heal_enabled and delta > 0 and GameState.phase == GameState.Phase.WAVE:
+	if nexus_heal_enabled and delta > 0 and \
+		GameState.phase == GameState.Phase.WAVE:
 		_heal_nexus_by_biscuits(delta)
 
 func _on_wave_changed(_new_wave: int) -> void:
 	pass
 
-func _on_phase_changed(p: int) -> void:
+func _on_phase_changed(_p: int) -> void:
 	_refresh_timer_ui()
-	if _mm and p == GameState.Phase.GAME_OVER:
-		_mm.call("stop_music", music_fade_sec)
 
 func _on_run_started() -> void:
 	if debug_start_with_biscuits:
 		GameState.add_biscuits(max(0, debug_biscuit_amount))
 	_on_biscuits_changed(GameState.biscuits, 0)
 	_on_phase_changed(GameState.phase)
+	if _mm:
+		if _mm.has_method("unduck_music"):
+			_mm.call("unduck_music", 0.1)
+		if _mm.has_method("play_run_start"):
+			_mm.call("play_run_start", music_fade_sec)
 
 func _on_run_ended(_victory: bool) -> void:
 	if shop_ui:
@@ -252,9 +261,12 @@ func _on_run_ended(_victory: bool) -> void:
 	_ramp_timer.stop()
 	_set_shop_ui_state(false)
 	_show_game_over()
-	if _mm:
+	if _mm and _mm.has_method("stop_music"):
 		_mm.call("stop_music", music_fade_sec)
 
+# -----------------------------------------------------------------------------
+# External helpers
+# -----------------------------------------------------------------------------
 func add_biscuits(amount: int) -> void:
 	GameState.add_biscuits(max(0, amount))
 
@@ -339,7 +351,8 @@ func _heal_nexus_by_biscuits(delta_biscuits: int) -> void:
 		return
 	var maxv: int = int(nexus.max_hp)
 	var pct_per: float = max(0.0, nexus_heal_per_biscuit_pct)
-	var heal_points: int = int(round(float(maxv) * (pct_per / 100.0) * float(delta_biscuits)))
+	var heal_points: int = int(round(float(maxv) * \
+		(pct_per / 100.0) * float(delta_biscuits)))
 	if heal_points <= 0:
 		heal_points = 1
 	var before: int = int(nexus.hp)
@@ -399,7 +412,7 @@ func _get_fill_stylebox(is_nexus: bool) -> StyleBoxFlat:
 		return _player_fill
 
 # -----------------------------------------------------------------------------
-# Color helpers (label text/shadow/outline)
+# Color helpers (label)
 # -----------------------------------------------------------------------------
 func _update_label_style(label: Label, ratio: float) -> void:
 	var r: float = clamp(ratio, 0.0, 1.0)
@@ -427,21 +440,19 @@ func _set_shop_ui_state(in_shop: bool) -> void:
 		return
 	if in_shop:
 		_ui_prev_visible.clear()
-		var children: Array = ui_root.get_children()
-		for n in children:
-			var c: CanvasItem = n as CanvasItem
+		for n in ui_root.get_children():
+			var c := n as CanvasItem
 			if c == null:
 				continue
-			if c == shop_ui or c == wave_label:
+			if c == shop_ui or c == wave_label or c == pause_menu:
 				continue
 			_ui_prev_visible[c] = c.visible
 			c.visible = false
 	else:
 		for k in _ui_prev_visible.keys():
-			var c2: CanvasItem = k as CanvasItem
+			var c2 := k as CanvasItem
 			if c2 != null:
-				var was: bool = bool(_ui_prev_visible[k])
-				c2.visible = was
+				c2.visible = bool(_ui_prev_visible[k])
 		_ui_prev_visible.clear()
 
 # -----------------------------------------------------------------------------
@@ -464,8 +475,9 @@ func _show_game_over() -> void:
 	get_tree().paused = true
 	var t: Tween = _go_layer.create_tween()
 	t.set_process_mode(Tween.TWEEN_PROCESS_IDLE)
-	t.tween_property(_go_bg, "modulate:a", 1.0, 0.35).set_trans(Tween.TRANS_SINE)
-	t.parallel().tween_property(_go_panel, "modulate:a", 1.0, 0.35)\
+	t.tween_property(_go_bg, "modulate:a", 1.0, 0.35) \
+		.set_trans(Tween.TRANS_SINE)
+	t.parallel().tween_property(_go_panel, "modulate:a", 1.0, 0.35) \
 		.set_trans(Tween.TRANS_SINE)
 
 func _ensure_game_over_ui() -> void:
@@ -477,7 +489,7 @@ func _ensure_game_over_ui() -> void:
 	add_child(_go_layer)
 
 	_go_bg = ColorRect.new()
-	_go_bg.color = Color(0,0,0,0.75)
+	_go_bg.color = Color(0, 0, 0, 0.75)
 	_go_bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	_go_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_go_layer.add_child(_go_bg)
@@ -489,9 +501,9 @@ func _ensure_game_over_ui() -> void:
 
 	_go_panel = PanelContainer.new()
 	var sb: StyleBoxFlat = StyleBoxFlat.new()
-	sb.bg_color = Color(0.08,0.1,0.14,1)
+	sb.bg_color = Color(0.08, 0.1, 0.14, 1)
 	sb.set_border_width_all(2)
-	sb.border_color = Color(0.25,0.3,0.36,1)
+	sb.border_color = Color(0.25, 0.3, 0.36, 1)
 	sb.set_corner_radius_all(12)
 	sb.set_content_margin_all(16)
 	_go_panel.add_theme_stylebox_override("panel", sb)
@@ -521,3 +533,13 @@ func _ensure_game_over_ui() -> void:
 func _on_retry_pressed() -> void:
 	get_tree().paused = false
 	get_tree().reload_current_scene()
+	
+	# -----------------------------------------------------------------------------
+# Input
+# -----------------------------------------------------------------------------
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("pause"):
+		if pause_menu.visible:
+			pause_menu.close_menu()
+		else:
+			pause_menu.open_menu()

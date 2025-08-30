@@ -1,20 +1,17 @@
-[gd_scene load_steps=8 format=3 uid="uid://c207eh03jhkby"]
+[gd_scene load_steps=9 format=3 uid="uid://qn73y1sibsj2"]
 
-[ext_resource type="FontFile" uid="uid://vo8pyg6fnfud" path="res://fonts/superstarorig_memesbruh03.ttf" id="1_0figk"]
-[ext_resource type="Script" uid="uid://bn85eycv4qims" path="res://MainMenu/MainMenu.gd" id="1_hlbaj"]
-
-[sub_resource type="StyleBoxLine" id="StyleBoxLine_hlbaj"]
-color = Color(0.278431, 0.333333, 0.411765, 1)
-grow_begin = 256.0
-grow_end = 261.0
+[ext_resource type="Script" uid="uid://dfax8uhiowawi" path="res://MainMenu/pausemenu.gd" id="1_votb5"]
+[ext_resource type="PackedScene" uid="uid://dc7l8j40x1f8q" path="res://MainMenu/SettingsPauseMenu.tscn" id="2_pp8vr"]
+[ext_resource type="FontFile" uid="uid://vo8pyg6fnfud" path="res://fonts/superstarorig_memesbruh03.ttf" id="2_q8ido"]
+[ext_resource type="Script" uid="uid://lg6ai1byhmm2" path="res://MainMenu/settings_pause_menu.gd" id="3_pp8vr"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hlbaj"]
 resource_name = "red_button_hover"
 bg_color = Color(0.2, 0.254902, 0.333333, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
 border_color = Color(0.984314, 0.74902, 0.141176, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
@@ -53,93 +50,99 @@ Button/styles/hover = SubResource("StyleBoxFlat_hlbaj")
 Button/styles/normal = SubResource("StyleBoxFlat_imden")
 Button/styles/pressed = SubResource("StyleBoxFlat_a5ktp")
 
-[node name="MainMenu" type="Control"]
+[node name="PauseMenu" type="Control"]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_hlbaj")
+script = ExtResource("1_votb5")
 
 [node name="Background" type="ColorRect" parent="."]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.0588235, 0.0901961, 0.12549, 1)
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0588235, 0.0901961, 0.12549, 0.486275)
 
-[node name="UI" type="CanvasLayer" parent="."]
+[node name="Settings" parent="." instance=ExtResource("2_pp8vr")]
+layout_mode = 1
+script = ExtResource("3_pp8vr")
+close_on_esc = true
 
-[node name="MainContainer" type="Control" parent="UI"]
-layout_mode = 3
+[node name="UI" type="Control" parent="."]
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="UI/MainContainer"]
+[node name="MainContainer" type="Control" parent="UI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Game Title" type="Label" parent="UI/MainContainer"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -219.0
+offset_top = 102.565
+offset_right = 219.0
+offset_bottom = 152.565
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.984314, 0.74902, 0.141176, 1)
+theme_override_fonts/font = ExtResource("2_q8ido")
+theme_override_font_sizes/font_size = 48
+text = "Biscuits and Broadsides"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MenuButtons" type="VBoxContainer" parent="UI/MainContainer"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -261.0
-offset_top = -92.0
-offset_right = 261.0
-offset_bottom = 92.0
+offset_left = -100.0
+offset_top = -120.0
+offset_right = 100.0
+offset_bottom = 120.0
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="Game Title" type="Label" parent="UI/MainContainer/VBoxContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.984314, 0.74902, 0.141176, 1)
-theme_override_fonts/font = ExtResource("1_0figk")
-theme_override_font_sizes/font_size = 48
-text = "Biscuits and Broadsides"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Sep2" type="VSeparator" parent="UI/MainContainer/VBoxContainer"]
-custom_minimum_size = Vector2(50, 50)
-layout_mode = 2
-theme_override_constants/separation = 50
-theme_override_styles/separator = SubResource("StyleBoxLine_hlbaj")
-
-[node name="MenuButtons" type="VBoxContainer" parent="UI/MainContainer/VBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 4
 theme = SubResource("Theme_1")
 
-[node name="StartBtn" type="Button" parent="UI/MainContainer/VBoxContainer/MenuButtons"]
+[node name="ResumeBtn" type="Button" parent="UI/MainContainer/MenuButtons"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.976471, 0.980392, 0.984314, 1)
 theme_override_font_sizes/font_size = 18
-text = "START"
+text = "RESUME"
 
-[node name="SettingsBtn2" type="Button" parent="UI/MainContainer/VBoxContainer/MenuButtons"]
+[node name="SettingsBtn2" type="Button" parent="UI/MainContainer/MenuButtons"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.9, 1)
 theme_override_font_sizes/font_size = 18
 text = "SETTINGS
 "
 
-[node name="Sep" type="VSeparator" parent="UI/MainContainer/VBoxContainer/MenuButtons"]
-custom_minimum_size = Vector2(250, 0)
+[node name="Sep" type="VSeparator" parent="UI/MainContainer/MenuButtons"]
 layout_mode = 2
 
-[node name="CreditsBtn" type="Button" parent="UI/MainContainer/VBoxContainer/MenuButtons"]
+[node name="ReturnBtn" type="Button" parent="UI/MainContainer/MenuButtons"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.9, 1)
 theme_override_font_sizes/font_size = 18
-text = "CREDITS"
-
-[node name="QuitBtn" type="Button" parent="UI/MainContainer/VBoxContainer/MenuButtons"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.9, 1)
-theme_override_font_sizes/font_size = 18
-text = "QUIT"
+text = "RETURN TO MENU"
 
 [node name="VersionLabel" type="Label" parent="UI/MainContainer"]
 layout_mode = 1
@@ -148,16 +151,13 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -1152.0
-offset_top = -14.0
+offset_left = -111.0
+offset_top = -23.0
+offset_right = -6.0
+offset_bottom = -3.0
 grow_horizontal = 0
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.7, 0.3, 0.3, 0.8)
 theme_override_font_sizes/font_size = 10
 text = "v0.07 by Max & David"
 horizontal_alignment = 2
-
-[connection signal="button_down" from="UI/MainContainer/VBoxContainer/MenuButtons/StartBtn" to="." method="_on_start_btn_button_down"]
-[connection signal="button_down" from="UI/MainContainer/VBoxContainer/MenuButtons/SettingsBtn2" to="." method="_on_settings_btn_2_button_down"]
-[connection signal="button_down" from="UI/MainContainer/VBoxContainer/MenuButtons/CreditsBtn" to="." method="_on_credits_btn_button_down"]
-[connection signal="button_down" from="UI/MainContainer/VBoxContainer/MenuButtons/QuitBtn" to="." method="_on_quit_btn_button_down"]

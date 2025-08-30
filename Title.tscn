@@ -1,0 +1,63 @@
+[gd_scene load_steps=3 format=3 uid="uid://by40tstvqlqst"]
+
+[ext_resource type="FontFile" uid="uid://vo8pyg6fnfud" path="res://fonts/superstarorig_memesbruh03.ttf" id="1_ax32a"]
+[ext_resource type="FontFile" uid="uid://cba1nry3pl84f" path="res://fonts/superstar_memesbruh03.ttf" id="2_quvj1"]
+
+[node name="Title" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="ColorRect" type="ColorRect" parent="CanvasLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0588235, 0.0901961, 0.12549, 1)
+
+[node name="Game Title" type="Label" parent="CanvasLayer"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -219.0
+offset_top = 102.565
+offset_right = 219.0
+offset_bottom = 152.565
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.984314, 0.74902, 0.141176, 1)
+theme_override_fonts/font = ExtResource("1_ax32a")
+theme_override_font_sizes/font_size = 48
+text = "Biscuits and Broadsides"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CenterContainer" type="CenterContainer" parent="CanvasLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/CenterContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="CanvasLayer/CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_quvj1")
+theme_override_font_sizes/font_size = 32
+text = "Special Thank you to those who playtested the game
+ and offered support!
+
+Asher
+Nic
+Sav
+Verna"
+horizontal_alignment = 1
+vertical_alignment = 1

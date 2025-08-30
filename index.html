@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>$GODOT_PROJECT_NAME</title>
+    $GODOT_HEAD_INCLUDE
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: #0f1720; /* dark bg */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #wrap {
+        text-align: center;
+        width: 90%;
+        max-width: 600px;
+      }
+      #logo {
+        max-width: 360px;
+        width: 80%;
+        image-rendering: pixelated;
+      }
+      #barbox {
+        height: 12px;
+        background: #1e293b;
+        border-radius: 999px;
+        overflow: hidden;
+        margin: 16px auto;
+        width: 80%;
+      }
+      #bar {
+        height: 100%;
+        width: 0%;
+        background: #fbbf24;
+        transition: width 0.12s linear;
+      }
+      #game {
+        display: none;
+      }
+      canvas { outline: none; }
+    </style>
+  </head>
+  <body>
+    <div id="wrap">
+      <img id="logo" src="splash.png" alt="Splash" />
+      <div id="barbox"><div id="bar"></div></div>
+      <div id="game">
+        $GODOT_CANVAS
+      </div>
+    </div>
+
+    <script src="$GODOT_URL/engine.js"></script>
+    <script>
+      const engine = new Engine($GODOT_CONFIG);
+      const bar = document.getElementById('bar');
+      const game = document.getElementById('game');
+
+      engine.onProgress = (ratio) => {
+        bar.style.width = Math.floor((ratio || 0) * 100) + '%';
+      };
+
+      engine
+        .startGame()
+        .then(() => {
+          document.getElementById('barbox').style.display = 'none';
+          game.style.display = 'block';
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    </script>
+  </body>
+</html>
