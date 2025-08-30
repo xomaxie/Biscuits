@@ -13,6 +13,7 @@ config_version=5
 config/name="Biscuit"
 run/main_scene="uid://c207eh03jhkby"
 config/features=PackedStringArray("4.4", "GL Compatibility")
+boot_splash/image="uid://ctf7ea5h4o35f"
 config/icon="res://icon.svg"
 
 [audio]
