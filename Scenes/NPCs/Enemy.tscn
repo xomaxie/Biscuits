@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://xg40ccusorf0" path="res://Scenes/NPCs/enemy.gd" id="1_xfrnf"]
 [ext_resource type="PackedScene" uid="uid://65uylbwhdw1a" path="res://Pickups/BiscuitPickup.tscn" id="2_52wyw"]
-[ext_resource type="SpriteFrames" uid="uid://dlvarewsi8u1v" path="res://art/enemies/Bat.tres" id="2_xfrnf"]
+[ext_resource type="Texture2D" uid="uid://brgc3am41ykbq" path="res://Tilesets/Shadow.png" id="4_6py02"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_gwnmk"]
 radius = 50.01
@@ -18,16 +18,20 @@ prefer_player_within = 400.0
 debug_spawn_logs = false
 biscuit_pickup_scene = ExtResource("2_52wyw")
 
+[node name="Shadow" type="Sprite2D" parent="."]
+modulate = Color(1, 1, 1, 0.545098)
+position = Vector2(-1, -4)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("4_6py02")
+
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 scale = Vector2(0.495, 0.495)
 shape = SubResource("CircleShape2D_gwnmk")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 scale = Vector2(4, 4)
-sprite_frames = ExtResource("2_xfrnf")
 animation = &"Run"
 autoplay = "Run"
-frame_progress = 0.0797361
 
 [node name="Area2D" type="Area2D" parent="."]
 collision_layer = 129
