@@ -470,17 +470,22 @@ func _apply_sprite_from_def(def: Dictionary) -> void:
 		_ensure_sprite_node()
 		_start_default_anim()
 		return
+
 	var sdef: Dictionary = def["sprite"]
 	_faces_right = bool(sdef.get("faces_right", true))
 	_anim_speed_base = float(sdef.get("speed_scale", 1.0))
 	var scale_mult: float = float(sdef.get("scale", 1.0))
+
 	if sdef.has("anim_map") and typeof(sdef["anim_map"]) == TYPE_DICTIONARY:
 		for k in sdef["anim_map"].keys():
 			_anim_map[String(k)] = String(sdef["anim_map"][k])
+
 	var default_anim: String = String(
 		sdef.get("default_anim", _anim_map.get("move", "Run"))
 	)
+
 	_ensure_sprite_node()
+
 	if sdef.has("frames"):
 		var frames_path: String = String(sdef["frames"])
 		var frames: SpriteFrames = ResourceLoader.load(frames_path) \
@@ -489,8 +494,21 @@ func _apply_sprite_from_def(def: Dictionary) -> void:
 			_sprite.sprite_frames = frames
 		else:
 			push_warning("Enemy: could not load SpriteFrames at " + frames_path)
+
+	# Apply scale
 	if is_instance_valid(_visual) and _visual != self:
 		_visual.scale = Vector2.ONE * scale_mult
+
+	# Apply optional offset
+	var offset_v: Vector2 = _parse_vec2_any(sdef.get("offset", Vector2.ZERO))
+	if is_instance_valid(_visual) and _visual != self:
+		if _visual is Sprite2D:
+			var spr := _visual as Sprite2D
+			spr.offset = offset_v
+		else:
+			_visual.position = offset_v
+
+	# Pick an animation to play
 	if _sprite != null and _sprite.sprite_frames != null:
 		var anim_to_play: String = default_anim
 		if not _sprite.sprite_frames.has_animation(anim_to_play):
@@ -701,3 +719,23 @@ func _pick_back_dir() -> Vector2:
 	if _base_move_dir.length_squared() > 1e-6:
 		return -_base_move_dir
 	return Vector2((randi() & 1) * 2 - 1, 0.0).normalized()
+	
+func _parse_vec2_any(v: Variant) -> Vector2:
+	match typeof(v):
+		TYPE_VECTOR2:
+			return v
+		TYPE_ARRAY:
+			var a := v as Array
+			if a.size() >= 2:
+				return Vector2(float(a[0]), float(a[1]))
+			return Vector2.ZERO
+		TYPE_DICTIONARY:
+			var d := v as Dictionary
+			return Vector2(float(d.get("x", 0.0)), float(d.get("y", 0.0)))
+		TYPE_STRING:
+			var parts := String(v).split(",", false)
+			if parts.size() >= 2:
+				return Vector2(float(parts[0]), float(parts[1]))
+			return Vector2.ZERO
+		_:
+			return Vector2.ZERO
