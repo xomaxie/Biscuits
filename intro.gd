@@ -5,12 +5,16 @@ extends Control
 # -----------------------------------------------------------------------------
 @export_file("*.tscn") var next_scene: String = "res://Scenes/Game.tscn"
 @export var auto_continue_after: float = 0.0
+@export var base_design_size: Vector2 = Vector2(1280, 720)
+@export var min_scale: float = 0.6
+@export var max_scale: float = 2.0
 
 # -----------------------------------------------------------------------------
 # Runtime state
 # -----------------------------------------------------------------------------
 var _can_start := false
 var _blink_t := 0.0
+var _scale := 1.0
 
 # -----------------------------------------------------------------------------
 # Node refs
@@ -19,6 +23,10 @@ var _blink_t := 0.0
 @onready var _objective: RichTextLabel = $Center/VBox/Objective
 @onready var _tips: RichTextLabel = $Center/VBox/Tips
 @onready var _anykey: Label = $Center/VBox/AnyKey
+@onready var _vbox: VBoxContainer = $Center/VBox
+@onready var _center: CenterContainer = $Center
+@onready var _fade: ColorRect = $Fade
+@onready var _bg: ColorRect = $Bg
 
 # -----------------------------------------------------------------------------
 # Content
@@ -54,25 +62,37 @@ const TIPS_BBCODE := """
 # Lifecycle
 # -----------------------------------------------------------------------------
 func _ready() -> void:
-	assert($Fade is ColorRect)
-	assert($Bg is ColorRect)
+	assert(_fade is ColorRect)
+	assert(_bg is ColorRect)
 	assert(_title is RichTextLabel)
 	assert(_objective is RichTextLabel)
 	assert($Center/VBox/HSeparator is HSeparator)
 	assert(_tips is RichTextLabel)
 	assert(_anykey is Label)
 
-	_apply_bbcode(_title, TITLE_BBCODE)
-	_apply_bbcode(_objective, OBJECTIVE_BBCODE)
-	_apply_bbcode(_tips, TIPS_BBCODE)
+	_title.bbcode_enabled = true
+	_objective.bbcode_enabled = true
+	_tips.bbcode_enabled = true
+	_title.text = TITLE_BBCODE
+	_objective.text = OBJECTIVE_BBCODE
+	_tips.text = TIPS_BBCODE
+
+	_title.fit_content = true
+	_objective.fit_content = true
+	_tips.fit_content = true
+	_anykey.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_anykey.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
 	if _anykey.text.strip_edges() == "":
 		_anykey.text = "Press any key to start"
 	_anykey.visible = auto_continue_after <= 0.0
 
-	$Fade.color.a = 1.0
-	var t := create_tween().set_trans(Tween.TRANS_SINE)\
-		.set_ease(Tween.EASE_OUT)
-	t.tween_property($Fade, "color:a", 0.0, 0.6)
+	resized.connect(_on_resized)
+	_apply_scale_now()
+
+	_fade.color.a = 1.0
+	var t := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	t.tween_property(_fade, "color:a", 0.0, 0.6)
 	await t.finished
 
 	_can_start = true
@@ -104,11 +124,53 @@ func _unhandled_input(event: InputEvent) -> void:
 # -----------------------------------------------------------------------------
 func _start_game() -> void:
 	_can_start = false
-	var t := create_tween().set_trans(Tween.TRANS_SINE)\
-		.set_ease(Tween.EASE_IN)
-	t.tween_property($Fade, "color:a", 1.0, 0.35)
+	var t := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	t.tween_property(_fade, "color:a", 1.0, 0.35)
 	await t.finished
 	get_tree().change_scene_to_file(next_scene)
+
+# -----------------------------------------------------------------------------
+# Resizing & scaling
+# -----------------------------------------------------------------------------
+func _on_resized() -> void:
+	_apply_scale_now()
+
+func _apply_scale_now() -> void:
+	var vp := get_viewport_rect().size
+	var s: float = min(vp.x / base_design_size.x, vp.y / base_design_size.y)
+	_scale = clamp(s, min_scale, max_scale)
+
+	_vbox.add_theme_constant_override("separation", int(16 * _scale))
+	_center.add_theme_constant_override("hseparation", 0)
+	_center.add_theme_constant_override("vseparation", 0)
+
+	var pad := int(24 * _scale)
+	_vbox.add_theme_constant_override("margin_left", pad)
+	_vbox.add_theme_constant_override("margin_right", pad)
+	_vbox.add_theme_constant_override("margin_top", pad)
+	_vbox.add_theme_constant_override("margin_bottom", pad)
+
+	_title.add_theme_font_size_override("normal_font_size", int(54 * _scale))
+	_title.add_theme_font_size_override("bold_font_size", int(54 * _scale))
+
+	_objective.add_theme_font_size_override("normal_font_size", int(22 * _scale))
+	_objective.add_theme_font_size_override("bold_font_size", int(22 * _scale))
+
+	_tips.add_theme_font_size_override("normal_font_size", int(20 * _scale))
+	_tips.add_theme_font_size_override("bold_font_size", int(20 * _scale))
+
+	_anykey.add_theme_font_size_override("font_size", int(22 * _scale))
+
+	_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_objective.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_tips.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_anykey.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var max_w: int = clamp(int(960 * _scale), 480, int(vp.x * 0.94))
+	_title.custom_minimum_size.x = max_w
+	_objective.custom_minimum_size.x = max_w
+	_tips.custom_minimum_size.x = max_w
+	_anykey.custom_minimum_size.x = max_w
 
 # -----------------------------------------------------------------------------
 # Helpers

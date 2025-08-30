@@ -10,10 +10,11 @@ radius = 37.1214
 collision_layer = 0
 collision_mask = 3
 script = ExtResource("1_2t30l")
+auto_rotate = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_yeyns")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-scale = Vector2(0.1, 0.1)
+scale = Vector2(0.15, 0.15)
 texture = ExtResource("2_kw5hl")

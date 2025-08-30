@@ -430,10 +430,14 @@ func _rand_point_along_edge(
 func _ensure_offscreen(pos: Vector2) -> Vector2:
 	var rect: Rect2 = _get_world_visible_rect()
 	match _burst_anchor_side:
-		0: pos.y = min(pos.y, rect.position.y - 1.0)
-		1: pos.x = max(pos.x, rect.position.x + rect.size.x + 1.0)
-		2: pos.y = max(pos.y, rect.position.y + rect.size.y + 1.0)
-		3: pos.x = min(pos.x, rect.position.x - 1.0)
+		0:
+			pos.y = min(pos.y, rect.position.y - spawn_margin)
+		1:
+			pos.x = max(pos.x, rect.position.x + rect.size.x + spawn_margin)
+		2:
+			pos.y = max(pos.y, rect.position.y + rect.size.y + spawn_margin)
+		3:
+			pos.x = min(pos.x, rect.position.x - spawn_margin)
 	return pos
 
 # -----------------------------------------------------------------------------
@@ -452,15 +456,22 @@ func _enemy_count_in_container() -> int:
 			n += 1
 	return n
 
+# -----------------------------------------------------------------------------
+# View rect + offscreen clamp (fixed for Camera2D.zoom)
+# -----------------------------------------------------------------------------
 func _get_world_visible_rect() -> Rect2:
 	var cam: Camera2D = get_viewport().get_camera_2d()
 	if cam != null:
 		var center: Vector2 = cam.get_screen_center_position()
 		var vp_size: Vector2 = get_viewport_rect().size
-		var half: Vector2 = vp_size * 0.5 * cam.zoom
-		var top_left: Vector2 = center - half
-		return Rect2(top_left, vp_size * cam.zoom)
+		var world_size: Vector2 = Vector2(
+			vp_size.x / max(0.0001, cam.zoom.x),
+			vp_size.y / max(0.0001, cam.zoom.y)
+		)
+		var top_left: Vector2 = center - world_size * 0.5
+		return Rect2(top_left, world_size)
 	return Rect2(get_viewport().get_visible_rect())
+
 
 func _has_property(obj: Object, prop: String) -> bool:
 	var plist: Array = obj.get_property_list()

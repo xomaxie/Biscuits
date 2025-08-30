@@ -27,6 +27,10 @@ WeaponFactory="*res://weapons/WeaponFactory.gd"
 EnemyDB="*res://autoload/EnemyDB.gd"
 MusicManager="*res://autoload/MusicManager.gd"
 
+[display]
+
+window/stretch/aspect="keep_height"
+
 [editor]
 
 version_control/plugin_name="GitPlugin"
