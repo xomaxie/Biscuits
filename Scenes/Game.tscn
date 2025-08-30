@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=4 uid="uid://c8it8ws3qx32f"]
+[gd_scene load_steps=33 format=4 uid="uid://c8it8ws3qx32f"]
 
 [ext_resource type="Script" uid="uid://cyf26hoy0a1wi" path="res://Scenes/game.gd" id="1_b2bpf"]
 [ext_resource type="TileSet" uid="uid://c8x3l763koufi" path="res://Scenes/Game.tres" id="2_3so38"]
@@ -15,6 +15,7 @@
 [ext_resource type="PackedScene" uid="uid://qn73y1sibsj2" path="res://MainMenu/Pausemenu.tscn" id="11_wxwew"]
 [ext_resource type="Texture2D" uid="uid://da53jhegnx1fm" path="res://Tilesets/cH87+8.png" id="12_3so38"]
 [ext_resource type="Script" uid="uid://b54cs8xofqq7m" path="res://Scenes/canvas_layer.gd" id="13_3cx6b"]
+[ext_resource type="Texture2D" uid="uid://428gxqd0k7ue" path="res://Tilesets/BiscuitBuscuit.png" id="15_alh3a"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_2irst"]
 radius = 42.107
@@ -119,20 +120,13 @@ radius = 64.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_3cx6b"]
 
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_alh3a"]
+
 [node name="Game" type="Node2D"]
 y_sort_enabled = true
 script = ExtResource("1_b2bpf")
-prep_duration = null
-early_wave_count = null
-early_wave_duration = null
-late_wave_duration = null
-wave_duration = null
-nexus_heal_per_biscuit_pct = null
-nexus_heal_enabled = null
-nexus_heal_debug = null
 debug_start_with_biscuits = true
 debug_biscuit_amount = 25
-music_fade_sec = null
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 script = ExtResource("13_3cx6b")
@@ -248,12 +242,19 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="TopBar" type="HBoxContainer" parent="UI"]
-offset_right = 40.0
-offset_bottom = 40.0
+offset_right = 190.0
+offset_bottom = 50.0
+
+[node name="TextureRect" type="TextureRect" parent="UI/TopBar"]
+custom_minimum_size = Vector2(45, 32)
+layout_mode = 2
+texture = ExtResource("15_alh3a")
+expand_mode = 1
 
 [node name="BiscuitLabel" type="Label" parent="UI/TopBar"]
 layout_mode = 2
 theme = ExtResource("5_bf53h")
+theme_override_font_sizes/font_size = 30
 text = "34 Biscuits"
 horizontal_alignment = 1
 
@@ -261,49 +262,63 @@ horizontal_alignment = 1
 layout_mode = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="UI"]
-offset_top = 35.0
-offset_right = 100.0
-offset_bottom = 75.0
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -279.0
+offset_top = -70.0
+offset_right = 279.0
+offset_bottom = -19.0
+grow_horizontal = 2
+grow_vertical = 0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="NexusBar" type="ProgressBar" parent="UI/VBoxContainer"]
-custom_minimum_size = Vector2(150, 25)
+[node name="HBoxContainer" type="HBoxContainer" parent="UI/VBoxContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="UI/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="PlayerHealth" type="ProgressBar" parent="UI/VBoxContainer/HBoxContainer/VBoxContainer2"]
+custom_minimum_size = Vector2(250, 25)
 layout_mode = 2
 show_percentage = false
 
-[node name="Nexus" type="Label" parent="UI/VBoxContainer/NexusBar"]
+[node name="Player" type="Label" parent="UI/VBoxContainer/HBoxContainer/VBoxContainer2"]
 layout_mode = 2
-offset_left = 22.0
-offset_top = 1.0
-offset_right = 122.0
-offset_bottom = 23.0
-theme = ExtResource("5_bf53h")
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_font_sizes/font_size = 18
-text = "Nexus"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="PlayerHealth" type="ProgressBar" parent="UI/VBoxContainer"]
-custom_minimum_size = Vector2(100, 25)
-layout_mode = 2
-show_percentage = false
-
-[node name="Player" type="Label" parent="UI/VBoxContainer/PlayerHealth"]
-layout_mode = 2
-offset_left = 22.0
-offset_top = 1.0
-offset_right = 122.0
-offset_bottom = 23.0
 theme = ExtResource("5_bf53h")
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.6)
 theme_override_colors/font_outline_color = Color(0.0509804, 0.0509804, 0.0509804, 1)
 theme_override_font_sizes/font_size = 18
 text = "Player"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="UI/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxEmpty_alh3a")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="NexusBar" type="ProgressBar" parent="UI/VBoxContainer/HBoxContainer/VBoxContainer"]
+custom_minimum_size = Vector2(250, 25)
+layout_mode = 2
+show_percentage = false
+
+[node name="Nexus" type="Label" parent="UI/VBoxContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+theme = ExtResource("5_bf53h")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 18
+text = "Nexus"
 horizontal_alignment = 1
 vertical_alignment = 1
 
