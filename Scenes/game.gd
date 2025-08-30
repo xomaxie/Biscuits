@@ -8,10 +8,14 @@ extends Node2D
 @onready var enemies_container: Node = $Enemies
 @onready var wave_label: Label = $UI/WaveLabel
 @onready var biscuit_label: Label = $UI/TopBar/BiscuitLabel
-@onready var nexus_bar: Range = $UI/VBoxContainer/NexusBar
-@onready var player_bar: Range = $UI/VBoxContainer/PlayerHealth
-@onready var nexus_label: Label = $UI/VBoxContainer/NexusBar/Nexus
-@onready var player_label: Label = $UI/VBoxContainer/PlayerHealth/Player
+@onready var nexus_bar: Range = $UI/VBoxContainer/HBoxContainer/\
+VBoxContainer/NexusBar
+@onready var player_bar: Range = $UI/VBoxContainer/HBoxContainer/\
+VBoxContainer2/PlayerHealth
+@onready var nexus_label: Label = $UI/VBoxContainer/HBoxContainer/\
+VBoxContainer/Nexus
+@onready var player_label: Label = $UI/VBoxContainer/HBoxContainer/\
+VBoxContainer2/Player
 @onready var prep_timer: Timer = $PrepTimer
 @onready var wave_timer: Timer = $WaveTimer
 @onready var barrel_spawner: Node = $BarrelSpawner
@@ -34,6 +38,8 @@ extends Node2D
 @export var debug_start_with_biscuits: bool = false
 @export var debug_biscuit_amount: int = 10000
 @export var music_fade_sec: float = 5.0
+@export var shop_fade_out: float = 0.2
+@export var shop_fade_in: float = 0.15
 
 # -----------------------------------------------------------------------------
 # Runtime
@@ -43,6 +49,8 @@ var _nexus_fill: StyleBoxFlat
 var _player_fill: StyleBoxFlat
 var _ui_prev_visible: Dictionary = {}
 var _ramp_timer: Timer
+var _fade_layer: CanvasLayer
+var _fade_rect: ColorRect
 
 # -----------------------------------------------------------------------------
 # Lifecycle
@@ -103,6 +111,8 @@ func _ready() -> void:
 
 	_mm = get_node_or_null("/root/MusicManager")
 
+	_ensure_fader_ui()
+
 	GameState.start_run()
 	_enter_prep()
 	_refresh_timer_ui()
@@ -143,21 +153,28 @@ func _enter_shop() -> void:
 	_heal_player_to_full()
 	_ramp_timer.stop()
 
+	await _fade_to(1.0, shop_fade_out)
+
 	var harvest: int = 0
 	if GameState and GameState.has_method("grant_wave_harvest_income"):
 		harvest = GameState.grant_wave_harvest_income()
 
 	_set_shop_ui_state(true)
 	get_tree().paused = true
+
 	if wave_label:
 		wave_label.text = (
 			"Shop — +%d from Harvesting" % harvest
 			if harvest > 0
 			else "Shop — Spend your biscuits"
 		)
+
 	shop_ui.show()
+
 	if _mm and _mm.has_method("duck_music"):
 		_mm.call("duck_music", music_fade_sec)
+
+	await _fade_to(0.0, shop_fade_in)
 
 func _on_prep_timeout() -> void:
 	_start_wave()
@@ -166,11 +183,16 @@ func _on_wave_timeout() -> void:
 	_enter_shop()
 
 func _on_shop_continue() -> void:
+	await _fade_to(1.0, shop_fade_out)
+
 	shop_ui.hide()
 	get_tree().paused = false
 	_set_shop_ui_state(false)
+
 	GameState.next_wave()
 	_enter_prep()
+
+	await _fade_to(0.0, shop_fade_in)
 
 func _set_spawning(enabled: bool) -> void:
 	if spawner.has_method("set_enabled"):
@@ -356,7 +378,6 @@ func _heal_nexus_by_biscuits(delta_biscuits: int) -> void:
 	if heal_points <= 0:
 		heal_points = 1
 	var before: int = int(nexus.hp)
-
 	if nexus.has_method("heal"):
 		nexus.heal(heal_points)
 	elif nexus.has_method("apply_heal"):
@@ -366,10 +387,9 @@ func _heal_nexus_by_biscuits(delta_biscuits: int) -> void:
 		if after_direct != before:
 			nexus.hp = after_direct
 			_on_nexus_hp_changed(after_direct, maxv)
-
 	if nexus_heal_debug:
 		var after_now: int = int(nexus.hp)
-		print("[NexusHeal] +", delta_biscuits, " biscuits -> +",
+		print("[NexusHeal] +", delta_biscuits, " biscuits -> +", \
 			heal_points, " HP (", before, "→", after_now, "/", maxv, ")")
 
 # -----------------------------------------------------------------------------
@@ -419,14 +439,12 @@ func _update_label_style(label: Label, ratio: float) -> void:
 	var font_col: Color
 	var shadow_col: Color = Color(0, 0, 0, 0.6)
 	var outline_col: Color = Color(0.05, 0.05, 0.05, 1.0)
-
 	if r < 0.2:
 		font_col = Color(1.0, 0.302, 0.302, 1.0)
 	elif r < 0.5:
 		font_col = Color(1.0, 0.839, 0.2, 1.0)
 	else:
 		font_col = Color(1, 1, 1, 1)
-
 	label.add_theme_color_override("font_color", font_col)
 	label.add_theme_color_override("font_outline_color", outline_col)
 	label.add_theme_color_override("font_shadow_color", shadow_col)
@@ -475,9 +493,9 @@ func _show_game_over() -> void:
 	get_tree().paused = true
 	var t: Tween = _go_layer.create_tween()
 	t.set_process_mode(Tween.TWEEN_PROCESS_IDLE)
-	t.tween_property(_go_bg, "modulate:a", 1.0, 0.35) \
-		.set_trans(Tween.TRANS_SINE)
-	t.parallel().tween_property(_go_panel, "modulate:a", 1.0, 0.35) \
+	t.tween_property(_go_bg, "modulate:a", 1.0, 0.35).set_trans(\
+		Tween.TRANS_SINE)
+	t.parallel().tween_property(_go_panel, "modulate:a", 1.0, 0.35)\
 		.set_trans(Tween.TRANS_SINE)
 
 func _ensure_game_over_ui() -> void:
@@ -487,18 +505,15 @@ func _ensure_game_over_ui() -> void:
 	_go_layer.layer = 100
 	_go_layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(_go_layer)
-
 	_go_bg = ColorRect.new()
 	_go_bg.color = Color(0, 0, 0, 0.75)
 	_go_bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	_go_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_go_layer.add_child(_go_bg)
-
 	var center: CenterContainer = CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	center.mouse_filter = Control.MOUSE_FILTER_STOP
 	_go_layer.add_child(center)
-
 	_go_panel = PanelContainer.new()
 	var sb: StyleBoxFlat = StyleBoxFlat.new()
 	sb.bg_color = Color(0.08, 0.1, 0.14, 1)
@@ -509,32 +524,28 @@ func _ensure_game_over_ui() -> void:
 	_go_panel.add_theme_stylebox_override("panel", sb)
 	_go_panel.custom_minimum_size = Vector2(520, 240)
 	center.add_child(_go_panel)
-
 	var vb: VBoxContainer = VBoxContainer.new()
 	vb.alignment = BoxContainer.ALIGNMENT_CENTER
 	vb.add_theme_constant_override("separation", 16)
 	_go_panel.add_child(vb)
-
 	_go_label = Label.new()
 	_go_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_go_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_go_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_go_label.add_theme_font_size_override("font_size", 28)
 	vb.add_child(_go_label)
-
 	_go_retry = Button.new()
 	_go_retry.text = "Retry"
 	_go_retry.custom_minimum_size = Vector2(200, 48)
 	_go_retry.pressed.connect(_on_retry_pressed)
 	vb.add_child(_go_retry)
-
 	_go_layer.visible = false
 
 func _on_retry_pressed() -> void:
 	get_tree().paused = false
 	get_tree().reload_current_scene()
-	
-	# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
 # Input
 # -----------------------------------------------------------------------------
 func _unhandled_input(event: InputEvent) -> void:
@@ -543,3 +554,28 @@ func _unhandled_input(event: InputEvent) -> void:
 			pause_menu.close_menu()
 		else:
 			pause_menu.open_menu()
+
+# -----------------------------------------------------------------------------
+# Screen fader
+# -----------------------------------------------------------------------------
+func _ensure_fader_ui() -> void:
+	if _fade_layer:
+		return
+	_fade_layer = CanvasLayer.new()
+	_fade_layer.layer = 95
+	_fade_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_fade_layer)
+	_fade_rect = ColorRect.new()
+	_fade_rect.color = Color(0, 0, 0, 1)
+	_fade_rect.modulate.a = 0.0
+	_fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fade_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_fade_layer.add_child(_fade_rect)
+
+func _fade_to(alpha: float, dur: float) -> void:
+	_ensure_fader_ui()
+	var t: Tween = _fade_layer.create_tween()
+	t.set_process_mode(Tween.TWEEN_PROCESS_IDLE)
+	t.tween_property(_fade_rect, "modulate:a", alpha, dur).set_trans(\
+		Tween.TRANS_SINE)
+	await t.finished
