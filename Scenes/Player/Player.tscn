@@ -1,6 +1,7 @@
-[gd_scene load_steps=204 format=3 uid="uid://dt4qc2a7mub8s"]
+[gd_scene load_steps=205 format=3 uid="uid://dt4qc2a7mub8s"]
 
 [ext_resource type="Script" uid="uid://c2eapae3kjvr3" path="res://Scenes/Player/player.gd" id="1_h54ih"]
+[ext_resource type="Texture2D" uid="uid://brgc3am41ykbq" path="res://Tilesets/Shadow.png" id="2_0objx"]
 [ext_resource type="Texture2D" uid="uid://cw2indvbqb05g" path="res://Scenes/Player/The Male adventurer - Free/Death/death_normal.png" id="2_6tu5v"]
 [ext_resource type="Texture2D" uid="uid://mr0npu25rcxb" path="res://Scenes/Player/The Male adventurer - Free/Idle/idle.png" id="2_esmjy"]
 [ext_resource type="Texture2D" uid="uid://b4kgwkjtq0flp" path="res://Scenes/Player/The Male adventurer - Free/Idle/idle_left_down.png" id="3_6tu5v"]
@@ -1432,6 +1433,12 @@ collision_mask = 2
 script = ExtResource("1_h54ih")
 move_speed = 320.0
 debug_desk_chair = false
+
+[node name="Shadow" type="Sprite2D" parent="."]
+modulate = Color(1, 1, 1, 0.466667)
+position = Vector2(-2, -9)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("2_0objx")
 
 [node name="Sprite2D" type="AnimatedSprite2D" parent="."]
 scale = Vector2(4, 4)
