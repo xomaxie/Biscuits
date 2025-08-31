@@ -1,8 +1,7 @@
-[gd_scene load_steps=4 format=3 uid="uid://jml2fmivv0xv"]
+[gd_scene load_steps=3 format=3 uid="uid://jml2fmivv0xv"]
 
 [ext_resource type="Script" uid="uid://b3vqpnw0cbeip" path="res://intro.gd" id="1_ayt76"]
 [ext_resource type="Theme" uid="uid://cgyexe6foeoie" path="res://Theme.tres" id="2_7a8ye"]
-[ext_resource type="FontFile" uid="uid://cba1nry3pl84f" path="res://fonts/superstar_memesbruh03.ttf" id="3_7a8ye"]
 
 [node name="Intro" type="Control"]
 layout_mode = 3
@@ -61,13 +60,6 @@ text = "[center][b]Protect the Nexus[/b][/center]
 fit_content = true
 horizontal_alignment = 1
 vertical_alignment = 1
-
-[node name="Label" type="Label" parent="Center/VBox"]
-layout_mode = 2
-theme = ExtResource("2_7a8ye")
-theme_override_fonts/font = ExtResource("3_7a8ye")
-text = "Biscuiteer"
-horizontal_alignment = 1
 
 [node name="Objective" type="RichTextLabel" parent="Center/VBox"]
 layout_mode = 2
