@@ -51,6 +51,7 @@ Button/styles/normal = SubResource("StyleBoxFlat_imden")
 Button/styles/pressed = SubResource("StyleBoxFlat_a5ktp")
 
 [node name="PauseMenu" type="Control"]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
